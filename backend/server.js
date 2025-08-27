@@ -132,16 +132,16 @@ app.use("/api/flash-sales", flashSaleRoutes);
 console.log("✓ Flash sale routes registered");
 console.log("=== All API Routes Registered ===");
 
-// Production static files
-if (process.env.NODE_ENV === "production") {
-  // Serve static files from the build directory
-  app.use(express.static(path.join(__dirname, "../frontend/build")));
+// Production static files - Disabled for separate deployment
+// if (process.env.NODE_ENV === "production") {
+//   // Serve static files from the build directory
+//   app.use(express.static(path.join(__dirname, "../frontend/build")));
 
-  // Handle React routing, return all requests to React app
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../frontend/build", "index.html"));
-  });
-}
+//   // Handle React routing, return all requests to React app
+//   app.get("*", (req, res) => {
+//     res.sendFile(path.resolve(__dirname, "../frontend/build", "index.html"));
+//   });
+// }
 
 // 404 handler
 app.use((req, res) => {
