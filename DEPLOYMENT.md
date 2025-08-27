@@ -1,9 +1,10 @@
 # WeHeal Deployment Guide for Render
 
 ## Prerequisites
-- GitHub repository with your code
+- GitHub repository with your code (✅ Already done)
 - Render account (free tier available)
-- MongoDB Atlas database (already configured)
+- MongoDB Atlas database (✅ Already configured)
+- **IMPORTANT**: All secrets have been removed from the repository for security
 
 ## Deployment Steps
 
@@ -30,6 +31,8 @@
    - `CLIENT_URL`: `https://weheal-frontend.onrender.com`
    - `EMAIL_USER`: `reshad.steroid1@gmail.com`
    - `EMAIL_PASS`: `rbnb jfxw hqme tcqk`
+   
+   **⚠️ SECURITY NOTE**: These are your actual production credentials. Keep them secure!
 
 3. **Deploy:**
    - Click "Create Web Service"
@@ -50,8 +53,10 @@
 
 2. **Set Environment Variables:**
    - `REACT_APP_API_URL`: `https://weheal-backend.onrender.com/api`
-   - `REACT_APP_ZEGO_APP_ID`: Your Zego app ID (if using video calls)
-   - `REACT_APP_ZEGO_SERVER_SECRET`: Your Zego server secret (if using video calls)
+   - `REACT_APP_ZEGO_APP_ID`: `1347306852`
+   - `REACT_APP_ZEGO_SERVER_SECRET`: `f613212fd9bc5b92cd5f4341e58becde`
+   
+   **⚠️ SECURITY NOTE**: These are your actual Zego credentials. Keep them secure!
 
 3. **Deploy:**
    - Click "Create Static Site"
@@ -67,10 +72,18 @@
 
 ## Important Notes
 
+### Security Fixes Applied ✅
+- **Removed exposed secrets** from git history
+- **Deleted all `.env` files** from the repository
+- **Added comprehensive `.gitignore`** to prevent future exposure
+- **Created environment templates** (`env.template`) for reference
+- **Replaced Google API key** with placeholder in Layout.pug
+
 ### Environment Variables
 - Never commit `.env` files to Git
 - Use Render's environment variable interface
 - Keep sensitive data secure
+- **All secrets are now safely stored in Render environment variables**
 
 ### CORS Configuration
 - Backend is configured to accept requests from the frontend domain
@@ -130,6 +143,14 @@
    - Health checks
    - Error tracking
    - Performance monitoring
+
+## Additional Configuration
+
+### Google Maps API Key (if needed)
+If you need Google Maps functionality in the live-doc template:
+1. Get a new Google Maps API key from [Google Cloud Console](https://console.cloud.google.com/)
+2. Replace `YOUR_GOOGLE_MAPS_API_KEY` in `live-doc-v1.0.0/src/pug/layouts/Layout.pug`
+3. **Never commit the actual API key to git**
 
 ## Support
 
