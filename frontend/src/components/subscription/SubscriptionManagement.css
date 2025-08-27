@@ -1,0 +1,283 @@
+.subscription-management {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.subscription-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.subscription-title {
+  font-weight: 700;
+  background: linear-gradient(45deg, #2196F3, #21CBF3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.create-subscription-btn {
+  border-radius: 25px;
+  padding: 12px 30px;
+  font-weight: 600;
+  text-transform: none;
+  transition: all 0.3s ease;
+}
+
+.create-subscription-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(33, 203, 243, 0.4);
+}
+
+.subscription-card {
+  transition: all 0.3s ease;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.subscription-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.subscription-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(45deg, #2196F3, #21CBF3);
+}
+
+.subscription-card .MuiCardContent-root {
+  padding: 1.5rem;
+}
+
+.subscription-card .MuiChip-root {
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.subscription-card .MuiIconButton-root {
+  transition: all 0.2s ease;
+}
+
+.subscription-card .MuiIconButton-root:hover {
+  transform: scale(1.1);
+}
+
+.subscription-items-preview {
+  max-height: 120px;
+  overflow-y: auto;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  padding: 8px;
+}
+
+.subscription-frequency-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: linear-gradient(45deg, #e3f2fd, #bbdefb);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #1976d2;
+}
+
+.next-delivery-info {
+  padding: 12px;
+  background: linear-gradient(45deg, #e8f5e8, #c8e6c9);
+  border-radius: 12px;
+  border-left: 4px solid #4caf50;
+}
+
+.subscription-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 12px;
+}
+
+.subscription-amount {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #2196F3;
+}
+
+.subscription-empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.subscription-empty-state .MuiSvgIcon-root {
+  opacity: 0.5;
+  margin-bottom: 1rem;
+}
+
+.subscription-dialog .MuiDialog-paper {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.subscription-dialog .MuiDialogTitle-root {
+  background: linear-gradient(45deg, #2196F3, #21CBF3);
+  color: white;
+  font-weight: 600;
+}
+
+.subscription-form-step {
+  margin-bottom: 2rem;
+}
+
+.subscription-form-step .step-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.subscription-product-card {
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.subscription-product-card:hover {
+  border-color: #2196F3;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+}
+
+.subscription-product-card.selected {
+  border-color: #2196F3;
+  background: rgba(33, 150, 243, 0.05);
+}
+
+.subscription-frequency-option {
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.subscription-frequency-option:hover {
+  border-color: #2196F3;
+  background: rgba(33, 150, 243, 0.05);
+}
+
+.subscription-frequency-option.selected {
+  border-color: #2196F3;
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.subscription-frequency-option .frequency-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.subscription-frequency-option .frequency-description {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.subscription-summary {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.subscription-summary-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.subscription-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.subscription-summary-item:last-child {
+  border-bottom: none;
+  font-weight: 600;
+  color: #2196F3;
+  font-size: 1.1rem;
+}
+
+.subscription-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.subscription-error {
+  text-align: center;
+  padding: 2rem;
+  color: #d32f2f;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .subscription-management {
+    padding: 1rem;
+  }
+  
+  .subscription-card .MuiCardContent-root {
+    padding: 1rem;
+  }
+  
+  .subscription-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .subscription-title {
+    font-size: 1.75rem;
+  }
+  
+  .create-subscription-btn {
+    padding: 10px 20px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Animation for card entrance */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.subscription-card {
+  animation: slideInUp 0.5s ease-out;
+}
+
+.subscription-card:nth-child(1) { animation-delay: 0.1s; }
+.subscription-card:nth-child(2) { animation-delay: 0.2s; }
+.subscription-card:nth-child(3) { animation-delay: 0.3s; }
+.subscription-card:nth-child(4) { animation-delay: 0.4s; }
+.subscription-card:nth-child(5) { animation-delay: 0.5s; }
+.subscription-card:nth-child(6) { animation-delay: 0.6s; }

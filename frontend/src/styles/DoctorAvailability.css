@@ -1,0 +1,285 @@
+/* CSS Variables for Consistent Theming */
+:root {
+  /* Colors - Light Theme */
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --secondary-color: #6b7280;
+  --secondary-hover: #4b5563;
+  --danger-color: #ef4444;
+  --danger-hover: #dc2626;
+  --success-color: #10b981;
+  
+  /* Background Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --bg-card: #ffffff;
+  
+  /* Text Colors */
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-muted: #9ca3af;
+  
+  /* Border Colors */
+  --border-color: #e5e7eb;
+  --border-light: #f3f4f6;
+  --border-dark: #d1d5db;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  
+  /* Transitions */
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Theme Variables */
+[data-theme="dark"] {
+  /* Background Colors */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-card: #1e293b;
+  
+  /* Text Colors */
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --text-muted: #64748b;
+  
+  /* Border Colors */
+  --border-color: #475569;
+  --border-light: #334155;
+  --border-dark: #1e293b;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+}
+
+.availability-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  transition: var(--transition);
+}
+
+.availability-container h2 {
+  margin-bottom: 2rem;
+  color: var(--text-primary);
+  font-size: 1.875rem;
+  font-weight: 700;
+  text-align: center;
+  transition: var(--transition);
+}
+
+/* Dark mode glass effect */
+[data-theme="dark"] .availability-container {
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .availability-container h2 {
+  color: #f1f5f9;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.error-message {
+  background-color: #fee2e2;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+[data-theme="dark"] .error-message {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.days-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.day-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 500;
+  border: 1px solid var(--border-light);
+}
+
+.day-button:hover {
+  background-color: var(--bg-secondary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.day-button.active {
+  background-color: var(--primary-color);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.day-button.non-working {
+  background-color: var(--bg-tertiary);
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.day-schedule {
+  background-color: var(--bg-card);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  transition: var(--transition);
+}
+
+[data-theme="dark"] .day-schedule {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(71, 85, 105, 0.2);
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.day-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.working-day-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.working-day-toggle input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.time-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.time-slot {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background-color: var(--bg-tertiary);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid var(--border-light);
+}
+
+.time-slot:hover {
+  background-color: var(--bg-secondary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.time-slot.available {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.time-slot.disabled {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  opacity: 0.7;
+}
+
+.time-slot .time {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.time-slot .status {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.time-slot.available .status {
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+/* Dark mode specific adjustments */
+[data-theme="dark"] .time-slot {
+  background: rgba(51, 65, 85, 0.4);
+  border-color: rgba(71, 85, 105, 0.3);
+}
+
+[data-theme="dark"] .time-slot:hover {
+  background: rgba(51, 65, 85, 0.6);
+  border-color: rgba(71, 85, 105, 0.5);
+}
+
+[data-theme="dark"] .time-slot.available {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+[data-theme="dark"] .time-slot.disabled {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+@media (max-width: 640px) {
+  .availability-container {
+    padding: 1rem;
+  }
+  
+  .days-nav {
+    gap: 0.25rem;
+    justify-content: center;
+  }
+  
+  .day-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .day-schedule {
+    padding: 1rem;
+  }
+  
+  .time-slots {
+    grid-template-columns: 1fr;
+  }
+} 

@@ -1,0 +1,21 @@
+{
+  "name": "weheal-fullstack",
+  "version": "1.0.0",
+  "description": "WeHeal Healthcare Marketplace - Full Stack Application",
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm start",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "cd frontend && npm run build",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
+    "test": "cd backend && npm test && cd ../frontend && npm test"
+  },
+  "keywords": ["healthcare", "marketplace", "react", "nodejs", "mongodb"],
+  "author": "WeHeal Team",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

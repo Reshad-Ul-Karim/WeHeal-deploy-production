@@ -1,0 +1,43 @@
+services:
+  # Backend API Service
+  - type: web
+    name: weheal-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: MAILTRAP_TOKEN
+        sync: false
+      - key: MAILTRAP_ENDPOINT
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: CLIENT_URL
+        value: https://weheal-frontend.onrender.com
+
+  # Frontend Service
+  - type: web
+    name: weheal-frontend
+    env: static
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://weheal-backend.onrender.com/api
+      - key: REACT_APP_ZEGO_APP_ID
+        sync: false
+      - key: REACT_APP_ZEGO_SERVER_SECRET
+        sync: false
