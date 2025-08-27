@@ -1,17 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import authRoutes from "./routes/authRoute.js";
-import dashboardRoutes from "./routes/dashboardRoute.js";
-import adminRoutes from './routes/adminRoutes.js';
-import adminMarketplaceRoutes from './routes/adminMarketplaceRoutes.js';
-import marketplaceRoutes from './routes/marketplaceRoutes.js';
-import cartRoutes from './routes/cartRoutes.js';
-import orderRoutes from './routes/orderRoutes.js';
-import videoCallRoutes from './routes/videoCallRoutes.js';
-import doctorRoutes from './routes/doctorRoutes.js';
-import subscriptionRoutes from './routes/subscriptionRoutes.js';
-import flashSaleRoutes from './routes/flashSaleRoutes.js';
+import apiRoutes from "./routes/apiRoutes.js";
 
 const app = express();
 
@@ -36,17 +26,7 @@ app.use(cors({
 }));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/admin/marketplace', adminMarketplaceRoutes);
-app.use('/api/marketplace', marketplaceRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/video-call', videoCallRoutes);
-app.use('/api/doctor', doctorRoutes);
-app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/flash-sales', flashSaleRoutes);
+app.use('/api', apiRoutes);
 
 // Catch-all 404 handler
 app.use((req, res) => {

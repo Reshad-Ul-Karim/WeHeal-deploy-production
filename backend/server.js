@@ -10,26 +10,7 @@ import { connectDB } from "./db/connectDB.js";
 import { initializeSocket } from "./socket.js";
 import { initFlashSaleAutomation } from "./utils/flashSaleAutomation.js";
 
-import authRoutes from "./routes/authRoute.js";
-import adminRoutes from "./routes/adminRoutes.js";
-import patientRoutes from "./routes/patientRoutes.js";
-import patientProfileRoutes from "./routes/patientProfileRoutes.js";
-import doctorRoutes from "./routes/doctorRoutes.js";
-import videoCallRoutes from "./routes/videoCallRoutes.js";
-import emergencyRoutes from "./routes/emergencyRoutes.js";
-import marketplaceRoutes from "./routes/marketplaceRoutes.js";
-import cartRoutes from "./routes/cartRoutes.js";
-import orderRoutes from "./routes/orderRoutes.js";
-import adminMarketplaceRoutes from "./routes/adminMarketplaceRoutes.js";
-import labTestReportRoutes from "./routes/labTestReportRoutes.js";
-import labCenterRoutes from "./routes/labCenterRoutes.js";
-import labTestPricingRoutes from "./routes/labTestPricingRoutes.js";
-import reportsRoutes from "./routes/reports.js";
-import paymentRoutes from "./routes/paymentRoutes.js";
-import prescriptionRoutes from "./routes/prescriptionRoutes.js";
-import consultationPaymentRoutes from "./routes/consultationPaymentRoutes.js";
-import subscriptionRoutes from "./routes/subscriptionRoutes.js";
-import flashSaleRoutes from "./routes/flashSaleRoutes.js";
+import apiRoutes from "./routes/apiRoutes.js";
 
 dotenv.config();
 
@@ -90,46 +71,8 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // API Routes
 console.log("=== Registering API Routes ===");
-app.use("/api/auth", authRoutes);
-console.log("✓ Auth routes registered");
-app.use("/api/admin", adminRoutes);
-console.log("✓ Admin routes registered");
-app.use("/api/patient", patientRoutes);
-console.log("✓ Patient routes registered");
-app.use("/api/patient-profile", patientProfileRoutes);
-console.log("✓ Patient profile routes registered");
-app.use("/api/doctor", doctorRoutes);
-console.log("✓ Doctor routes registered");
-app.use("/api/video-call", videoCallRoutes);
-console.log("✓ Video call routes registered");
-app.use("/api/emergency", emergencyRoutes);
-console.log("✓ Emergency routes registered");
-app.use("/api/marketplace", marketplaceRoutes);
-console.log("✓ Marketplace routes registered");
-app.use("/api/cart", cartRoutes);
-console.log("✓ Cart routes registered");
-app.use("/api/orders", orderRoutes);
-console.log("✓ Order routes registered");
-app.use("/api/admin/marketplace", adminMarketplaceRoutes);
-console.log("✓ Admin marketplace routes registered");
-app.use("/api/lab-tests", labTestReportRoutes);
-console.log("✓ Lab test routes registered");
-app.use("/api/lab-centers", labCenterRoutes);
-console.log("✓ Lab center routes registered");
-app.use("/api/lab-test-pricing", labTestPricingRoutes);
-console.log("✓ Lab test pricing routes registered");
-app.use("/api/reports", reportsRoutes);
-console.log("✓ Reports routes registered");
-app.use("/api/payments", paymentRoutes);
-console.log("✓ Payment routes registered");
-app.use("/api/prescriptions", prescriptionRoutes);
-console.log("✓ Prescription routes registered");
-app.use("/api/consultation-payments", consultationPaymentRoutes);
-console.log("✓ Consultation payment routes registered");
-app.use("/api/subscriptions", subscriptionRoutes);
-console.log("✓ Subscription routes registered");
-app.use("/api/flash-sales", flashSaleRoutes);
-console.log("✓ Flash sale routes registered");
+app.use("/api", apiRoutes);
+console.log("✓ All API routes registered via apiRoutes");
 console.log("=== All API Routes Registered ===");
 
 // Production static files - Disabled for separate deployment
