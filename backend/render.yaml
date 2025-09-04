@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: weheal-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: MONGO_URI
+        value: mongodb+srv://sammam:1234@sammam.e58qn.mongodb.net/weHeal?retryWrites=true&w=majority&appName=sammam
+      - key: JWT_SECRET
+        value: mysecretkey
+      - key: MAILTRAP_TOKEN
+        value: 0a4acdad7f9377c2a09edbf17a33bdb2
+      - key: MAILTRAP_ENDPOINT
+        value: https://send.api.mailtrap.io
+      - key: CLIENT_URL
+        value: https://weheal-frontend.onrender.com
+      - key: EMAIL_USER
+        value: reshad.steroid1@gmail.com
+      - key: EMAIL_PASS
+        value: rbnb jfxw hqme tcqk

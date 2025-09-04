@@ -28,6 +28,8 @@
     "mailtrap": "^4.0.0",
     "mongoose": "^8.13.2",
     "nodemailer": "^6.10.0",
+    "pdfkit": "^0.17.2",
+    "qrcode": "^1.5.4",
     "react-datepicker": "^8.3.0",
     "react-icons": "^5.5.0"
   },

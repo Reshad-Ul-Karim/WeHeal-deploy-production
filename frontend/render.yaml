@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: weheal-frontend
+    env: static
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_ZEGO_APP_ID
+        value: 1347306852
+      - key: REACT_APP_ZEGO_SERVER_SECRET
+        value: f613212fd9bc5b92cd5f4341e58becde
+      - key: REACT_APP_API_URL
+        value: https://weheal-backend.onrender.com/api
