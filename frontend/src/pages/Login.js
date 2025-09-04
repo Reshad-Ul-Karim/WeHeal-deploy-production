@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../utils/api";
+import { testApiConnection, testLogin } from "../utils/testApi";
 import "../styles/Auth.css";
 
 const Login = () => {
