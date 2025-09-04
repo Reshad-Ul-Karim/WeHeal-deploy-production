@@ -35,7 +35,7 @@ class WebSocketService {
 
     try {
       // Create a Socket.IO client connection
-      const backendUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5001';
+      const backendUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || (window.location.hostname === 'weheal-frontend.onrender.com' ? 'https://weheal-backend.onrender.com' : 'https://weheal-backend.onrender.com');
       this.socket = io(backendUrl, {
         path: '/socket.io',
         reconnection: true,

@@ -50,7 +50,7 @@ const LabCenterManagement = () => {
   const fetchLabCenters = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5001/api/lab-centers', {
+      const response = await fetch('https://weheal-backend.onrender.com/api/lab-centers', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -105,7 +105,7 @@ const LabCenterManagement = () => {
     setSuccess('');
 
     try {
-      const response = await fetch('http://localhost:5001/api/lab-centers', {
+      const response = await fetch('https://weheal-backend.onrender.com/api/lab-centers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

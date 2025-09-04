@@ -49,7 +49,7 @@ const ReportsSection = () => {
     const reportPath = order.reportPaths?.find(rp => rp.productId === labTestItem.productId._id);
     
     if (reportPath) {
-      const reportUrl = `http://localhost:5001/api/reports/${order.orderId}/${labTestItem.productId._id}`;
+      const reportUrl = `https://weheal-backend.onrender.com/api/reports/${order.orderId}/${labTestItem.productId._id}`;
       setReportViewer({
         isOpen: true,
         reportUrl: reportUrl,
@@ -64,7 +64,7 @@ const ReportsSection = () => {
     const reportPath = order.reportPaths?.find(rp => rp.productId === labTestItem.productId._id);
     
     if (reportPath) {
-      const downloadUrl = `http://localhost:5001/api/reports/${order.orderId}/${labTestItem.productId._id}/download`;
+      const downloadUrl = `https://weheal-backend.onrender.com/api/reports/${order.orderId}/${labTestItem.productId._id}/download`;
       
       const link = document.createElement('a');
       link.href = downloadUrl;

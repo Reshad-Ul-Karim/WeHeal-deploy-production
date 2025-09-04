@@ -452,7 +452,7 @@ const OrdersPage = () => {
                           }}>
                             <div style={{ flexShrink: 0 }}>
                               <img
-                                src={item.productId?.image ? `http://localhost:5001${item.productId.image}` : '/placeholder-product.png'}
+                                src={item.productId?.image ? `https://weheal-backend.onrender.com${item.productId.image}` : '/placeholder-product.png'}
                                 alt={item.name}
                                 style={{
                                   height: '80px',

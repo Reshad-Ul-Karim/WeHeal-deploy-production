@@ -2,7 +2,7 @@
 // This file centralizes all API endpoint configurations
 
 // Get API base URL from environment variables
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'weheal-frontend.onrender.com' ? 'https://weheal-backend.onrender.com/api' : 'https://weheal-backend.onrender.com/api');
 const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
 
 // API Endpoints Configuration

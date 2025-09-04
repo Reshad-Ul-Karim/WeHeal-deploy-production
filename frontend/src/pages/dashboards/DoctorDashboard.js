@@ -224,7 +224,7 @@ const DoctorDashboard = () => {
       const testBackend = async () => {
         try {
           console.log('Testing backend connectivity...');
-          const response = await fetch('http://localhost:5001/api/auth/check-auth', {
+          const response = await fetch('https://weheal-backend.onrender.com/api/auth/check-auth', {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -253,11 +253,11 @@ const DoctorDashboard = () => {
     // If it's a relative path starting with /uploads, use the proxy
     // The backend now returns /uploads/profiles/filename and the proxy should handle this
     if (picturePath.startsWith('/uploads/')) {
-      return picturePath; // Use the proxy which is set to http://localhost:5001
+      return picturePath; // Use the proxy which is set to https://weheal-backend.onrender.com
     }
     
     // Fallback: construct the full URL
-    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+    const baseUrl = process.env.REACT_APP_API_URL || 'https://weheal-backend.onrender.com';
     const cleanPath = picturePath.replace(/^\//, ''); // Remove leading slash
     return `${baseUrl}/${cleanPath}`;
   };

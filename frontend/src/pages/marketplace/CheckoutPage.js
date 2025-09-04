@@ -1092,7 +1092,7 @@ const CheckoutPage = () => {
                   {cart.items.map((item) => (
                     <Box key={item.productId._id} display="flex" alignItems="center" mb={2}>
                       <img
-                        src={item.productId.image ? `http://localhost:5001${item.productId.image}` : '/placeholder-product.png'}
+                        src={item.productId.image ? `https://weheal-backend.onrender.com${item.productId.image}` : '/placeholder-product.png'}
                         alt={item.productId.name}
                         style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px', marginRight: '12px' }}
                         onError={(e) => {

@@ -86,7 +86,7 @@ const PrescriptionForm = () => {
   const fetchAppointmentDetails = async () => {
     try {
       console.log('Fetching appointment details for ID:', appointmentId);
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+      const baseURL = process.env.REACT_APP_API_URL || 'https://weheal-backend.onrender.com/api';
       const response = await fetch(`${baseURL}/doctor/appointment/${appointmentId}`, {
         credentials: 'include'
       });
@@ -194,7 +194,7 @@ const PrescriptionForm = () => {
     try {
       console.log('Submitting prescription form with data:', form);
       
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+      const baseURL = process.env.REACT_APP_API_URL || 'https://weheal-backend.onrender.com/api';
       const response = await fetch(`${baseURL}/prescriptions/create`, {
         method: 'POST',
         headers: {
@@ -583,7 +583,7 @@ const PrescriptionForm = () => {
                   console.log('Test data to send:', testData);
                   
                   // Test the API endpoint
-                  fetch('http://localhost:5001/api/prescriptions/test', {
+                  fetch('https://weheal-backend.onrender.com/api/prescriptions/test', {
                     credentials: 'include'
                   })
                   .then(response => response.json())

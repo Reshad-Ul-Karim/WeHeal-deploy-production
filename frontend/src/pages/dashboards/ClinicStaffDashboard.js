@@ -53,11 +53,11 @@ const ClinicStaffDashboard = () => {
     // If it's a relative path starting with /uploads, use the proxy
     // The backend now returns /uploads/profiles/filename and the proxy should handle this
     if (picturePath.startsWith('/uploads/')) {
-      return picturePath; // Use the proxy which is set to http://localhost:5001
+      return picturePath; // Use the proxy which is set to https://weheal-backend.onrender.com
     }
     
     // Fallback: construct the full URL
-    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+    const baseUrl = process.env.REACT_APP_API_URL || 'https://weheal-backend.onrender.com';
     const cleanPath = picturePath.replace(/^\//, ''); // Remove leading slash
     return `${baseUrl}/${cleanPath}`;
   };

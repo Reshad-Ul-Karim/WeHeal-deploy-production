@@ -234,7 +234,7 @@ const OrderDetailPage = () => {
                   <div key={index} className="p-6">
                     <div className="flex items-start space-x-4">
                       <img
-                        src={item.productId?.image ? `http://localhost:5001${item.productId.image}` : '/placeholder-product.png'}
+                        src={item.productId?.image ? `https://weheal-backend.onrender.com${item.productId.image}` : '/placeholder-product.png'}
                         alt={item.name}
                         className="h-20 w-20 rounded-md object-cover flex-shrink-0"
                         onError={(e) => {

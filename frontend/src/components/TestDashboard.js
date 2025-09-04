@@ -126,7 +126,7 @@ const TestDashboard = () => {
               borderRadius: '8px',
               border: `1px solid ${isDarkMode ? '#475569' : '#e2e8f0'}`
             }}>
-              <strong>Backend:</strong> http://localhost:5001
+              <strong>Backend:</strong> https://weheal-backend.onrender.com
             </div>
           </div>
         </div>

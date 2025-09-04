@@ -109,7 +109,7 @@ const FlashSaleItem = ({ flashSale, onAddToCart }) => {
       <CardMedia
         component="img"
         height="200"
-        image={product.image ? `http://localhost:5001/${product.image}` : '/placeholder-medicine.jpg'}
+        image={product.image ? `https://weheal-backend.onrender.com/${product.image}` : '/placeholder-medicine.jpg'}
         alt={product.name}
         sx={{ objectFit: 'cover' }}
       />

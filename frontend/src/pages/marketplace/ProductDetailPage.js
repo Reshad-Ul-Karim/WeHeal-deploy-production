@@ -272,7 +272,7 @@ const ProductDetailPage = () => {
             top: '2rem'
           }}>
             <img
-              src={product.image ? `http://localhost:5001${product.image}` : '/placeholder-product.png'}
+              src={product.image ? `https://weheal-backend.onrender.com${product.image}` : '/placeholder-product.png'}
               alt={product.name}
               style={{
                 width: '100%',

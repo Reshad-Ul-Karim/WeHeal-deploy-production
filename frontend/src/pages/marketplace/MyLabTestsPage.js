@@ -129,7 +129,7 @@ const MyLabTestsPage = () => {
     const reportPath = order.reportPaths?.find(rp => rp.productId === labTestItem.productId._id);
     
     if (reportPath) {
-      const reportUrl = `http://localhost:5001/api/reports/${order.orderId}/${labTestItem.productId._id}`;
+      const reportUrl = `https://weheal-backend.onrender.com/api/reports/${order.orderId}/${labTestItem.productId._id}`;
       setReportViewer({
         isOpen: true,
         reportUrl: reportUrl,
@@ -145,7 +145,7 @@ const MyLabTestsPage = () => {
     const reportPath = order.reportPaths?.find(rp => rp.productId === labTestItem.productId._id);
     
     if (reportPath) {
-      const downloadUrl = `http://localhost:5001/api/reports/${order.orderId}/${labTestItem.productId._id}/download`;
+      const downloadUrl = `https://weheal-backend.onrender.com/api/reports/${order.orderId}/${labTestItem.productId._id}/download`;
       
       // Create a temporary link to trigger download
       const link = document.createElement('a');
@@ -516,7 +516,7 @@ const MyLabTestsPage = () => {
                           }}>
                             <div style={{ flexShrink: 0 }}>
                               <img
-                                src={item.productId?.image ? `http://localhost:5001${item.productId.image}` : '/placeholder-product.png'}
+                                src={item.productId?.image ? `https://weheal-backend.onrender.com${item.productId.image}` : '/placeholder-product.png'}
                                 alt={item.name}
                                 style={{
                                   height: '80px',
