@@ -20,7 +20,10 @@ export const getPatientProfile = async (req, res) => {
     // Construct full profile picture URL if profile picture exists
     let profileData = patient.toObject();
     if (profileData.profilePicture) {
-      profileData.profilePicture = `/uploads/profiles/${profileData.profilePicture}`;
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://weheal-backend.onrender.com' 
+        : 'http://localhost:5001';
+      profileData.profilePicture = `${baseUrl}/uploads/profiles/${profileData.profilePicture}`;
     }
 
     res.json({
@@ -221,10 +224,15 @@ export const uploadProfilePicture = async (req, res) => {
     patient.profilePicture = req.file.filename;
     await patient.save();
 
+    // Return full URL for the uploaded profile picture
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://weheal-backend.onrender.com' 
+      : 'http://localhost:5001';
+    
     res.json({
       success: true,
       message: 'Profile picture uploaded successfully',
-      profilePicture: `/uploads/profiles/${req.file.filename}`
+      profilePicture: `${baseUrl}/uploads/profiles/${req.file.filename}`
     });
   } catch (error) {
     console.error('Error in uploadProfilePicture:', error);

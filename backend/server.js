@@ -62,6 +62,9 @@ app.use(
   })
 );
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 // Add request logging middleware
 app.use((req, res, next) => {
   console.log("=== Incoming Request ===");
@@ -70,9 +73,6 @@ app.use((req, res, next) => {
   console.log("Headers:", req.headers);
   next();
 });
-
-// Static file serving for uploads
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // API Routes
 console.log("=== Registering API Routes ===");

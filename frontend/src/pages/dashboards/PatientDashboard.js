@@ -376,20 +376,52 @@ const PatientDashboard = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showNotification('Please select an image file', 'error');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showNotification('File size must be less than 5MB', 'error');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('profilePicture', file);
 
     try {
+      console.log('Uploading profile picture...');
       const response = await api.post('/patient-profile/upload-profile-picture', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data'
+        },
+        timeout: 30000 // 30 seconds timeout for file upload
       });
+      
+      console.log('Upload response:', response.data);
+      
       if (response.data.success) {
         setProfilePicture(response.data.profilePicture);
         showNotification('Profile picture updated successfully', 'success');
+        // Refresh the page to show the new profile picture
+        window.location.reload();
+      } else {
+        showNotification(response.data.message || 'Failed to upload profile picture', 'error');
       }
     } catch (err) {
       console.error('Error uploading profile picture:', err);
-      showNotification('Error uploading profile picture', 'error');
+      console.error('Error details:', err.response?.data);
+      
+      let errorMessage = 'Error uploading profile picture';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      showNotification(errorMessage, 'error');
     }
   };
 
