@@ -35,7 +35,8 @@ class WebSocketService {
 
     try {
       // Create a Socket.IO client connection
-      this.socket = io('http://localhost:5001', {
+      const backendUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5001';
+      this.socket = io(backendUrl, {
         path: '/socket.io',
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,

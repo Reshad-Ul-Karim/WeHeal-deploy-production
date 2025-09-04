@@ -31,7 +31,8 @@ class WebSocketService {
     this.isConnecting = true;
     try {
       // Connect to main backend Socket.IO server
-      this.socket = io('http://localhost:5001', {
+      const backendUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5001';
+      this.socket = io(backendUrl, {
         path: '/socket.io',
         transports: ['websocket', 'polling'],
         reconnection: true,
