@@ -8,7 +8,9 @@ import {
   getDoctorAvailability,
   updateDoctorAvailability,
   getAllDoctorAvailability,
-  getPatientDetails
+  getPatientDetails,
+  migrateDoctorAvailability,
+  getAppointmentDetails
 } from '../controllers/doctorController.js';
 import {
   getDoctorProfile,
@@ -56,6 +58,7 @@ router.get('/dashboard', getDoctorDashboard);
 router.get('/availability', getAllDoctorAvailability);
 router.get('/availability/:dayOfWeek', getDoctorAvailability);
 router.put('/availability/:dayOfWeek', updateDoctorAvailability);
+router.post('/availability/migrate', migrateDoctorAvailability);
 
 // Doctor profile routes
 router.get('/profile', getDoctorProfile);
@@ -65,5 +68,8 @@ router.post('/upload-profile-picture', upload.single('profilePicture'), uploadDo
 
 // Patient details route
 router.get('/patient/:patientId', getPatientDetails);
+
+// Appointment details route
+router.get('/appointment/:appointmentId', getAppointmentDetails);
 
 export default router; 

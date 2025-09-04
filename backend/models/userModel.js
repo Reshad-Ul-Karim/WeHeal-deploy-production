@@ -100,6 +100,63 @@ const userSchema = new mongoose.Schema(
     clinicStaffDetails: {
       clinicLocation: String,
     },
+    nurseDetails: {
+      specialization: {
+        type: String,
+        enum: ['General', 'ICU', 'Emergency', 'Pediatric', 'Surgical', 'Cardiac', 'Oncology', 'Psychiatric', 'Other'],
+        default: 'General'
+      },
+      yearsOfExperience: {
+        type: Number,
+        min: 0,
+        max: 50,
+        default: 0
+      },
+      education: [{
+        degree: String,
+        institution: String,
+        year: Number
+      }],
+      certifications: [String],
+      isAvailable: {
+        type: Boolean,
+        default: true
+      },
+      currentStatus: {
+        type: String,
+        enum: ['available', 'on_duty', 'offline'],
+        default: 'available'
+      },
+      shift: {
+        type: String,
+        enum: ['morning', 'afternoon', 'night'],
+        default: 'morning'
+      }
+    },
+    customerCareDetails: {
+      department: {
+        type: String,
+        enum: ['general', 'technical', 'billing', 'emergency'],
+        default: 'general'
+      },
+      shift: {
+        type: String,
+        enum: ['morning', 'afternoon', 'night'],
+        default: 'morning'
+      },
+      isAvailable: {
+        type: Boolean,
+        default: true
+      },
+      maxConcurrentChats: {
+        type: Number,
+        default: 3
+      },
+      currentChats: {
+        type: Number,
+        default: 0
+      }
+    },
     adminDetails: {
       // No specific fields needed as _id will be used
     },

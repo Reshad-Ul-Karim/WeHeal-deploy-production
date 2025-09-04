@@ -11,6 +11,7 @@ const VideoCall = () => {
   const [callDetails, setCallDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cameraPermission, setCameraPermission] = useState(null);
 
   // Get ZegoCloud credentials from environment variables
   const appID = process.env.REACT_APP_ZEGO_APP_ID;
@@ -20,8 +21,36 @@ const VideoCall = () => {
   const searchParams = new URLSearchParams(location.search);
   const username = searchParams.get('username') || callDetails?.participantName || 'Anonymous';
 
+  // Check camera and microphone permissions
+  const checkPermissions = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: true, 
+        audio: true 
+      });
+      setCameraPermission('granted');
+      // Stop the stream immediately as we just needed to check permissions
+      stream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      console.error('Permission denied:', err);
+      setCameraPermission('denied');
+    }
+  };
+
+  // Helper function to get user role
+  const getUserRole = () => {
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    const role = userData.role || 'Patient';
+    console.log('VideoCall - User role detected:', role, 'User data:', userData);
+    return role;
+  };
+
   useEffect(() => {
     console.log('VideoCall mounted');
+    
+    // Check camera permissions first
+    checkPermissions();
+    
     const fetchCallDetails = async () => {
       try {
         const response = await api.get(`/video-call/${appointmentId}`);
@@ -41,6 +70,7 @@ const VideoCall = () => {
     if (!callDetails || !appID || !serverSecret) return;
     console.log('callDetails:', callDetails);
     console.log('meetingRef.current:', meetingRef.current);
+    
     const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
       Number(appID),
       serverSecret,
@@ -48,8 +78,10 @@ const VideoCall = () => {
       Date.now().toString(),
       username
     );
+    
     const zc = ZegoUIKitPrebuilt.create(kitToken);
     console.log('Initializing ZegoCloud UI');
+    
     zc.joinRoom({
       container: meetingRef.current,
       sharedLinks: [
@@ -61,26 +93,63 @@ const VideoCall = () => {
       scenario: {
         mode: ZegoUIKitPrebuilt.OneONoneCall,
       },
-      showScreenSharingButton: true,
-      turnOnMicrophoneWhenJoining: false,
+      // Video and Audio Settings
+      turnOnMicrophoneWhenJoining: true,
+      turnOnCameraWhenJoining: true,
       useFrontFacingCamera: true,
+      
+      // UI Controls
+      showScreenSharingButton: true,
       showMyCameraToggleButton: true,
       showMyMicrophoneToggleButton: true,
       showAudioVideoSettingsButton: true,
+      showUserListButton: true,
+      showChatButton: true,
+      showLeaveButton: true,
+      
+      // Local Video Preview Settings
+      showLocalVideoPreview: true,
+      showLocalVideoPreviewMirror: true,
+      
+      // Audio/Video Configuration
       audioVideoConfig: {
         channelCount: { ideal: 1 },
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: false,
-        sampleRate: 44100
+        autoGainControl: true,
+        sampleRate: 44100,
+        // Video constraints
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 }
+        }
       },
+      
+      // Event Handlers
+      onJoinRoom: () => {
+        console.log('Successfully joined room');
+      },
+      
+      onLeaveRoom: () => {
+        console.log('Left room');
+      },
+      
+      onUserJoin: (user) => {
+        console.log('User joined:', user);
+      },
+      
+      onUserLeave: (user) => {
+        console.log('User left:', user);
+      },
+      
       onLeave: async () => {
         try {
           // Update appointment status to completed
           await api.post(`/video-call/${appointmentId}/end`);
           
           // Check user role and navigate accordingly
-          const userRole = localStorage.getItem('userRole') || 'patient';
+          const userRole = getUserRole();
           
           if (userRole === 'Doctor') {
             // Doctor goes back to doctor dashboard
@@ -93,7 +162,7 @@ const VideoCall = () => {
           console.error('Error ending call:', error);
           
           // Check user role for fallback navigation
-          const userRole = localStorage.getItem('userRole') || 'patient';
+          const userRole = getUserRole();
           
           if (userRole === 'Doctor') {
             navigate('/dashboard/doctor');
@@ -103,7 +172,7 @@ const VideoCall = () => {
         }
       }
     });
-  }, [callDetails, appID, serverSecret, username, navigate]);
+  }, [callDetails, appID, serverSecret, username, navigate, appointmentId]);
 
   if (!appID || !serverSecret) {
     return (
@@ -133,6 +202,34 @@ const VideoCall = () => {
     );
   }
 
+  if (cameraPermission === 'denied') {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Camera Access Required</h2>
+          <p className="text-gray-600 mb-6">
+            Please allow camera and microphone access to join the video call. 
+            You can enable permissions in your browser settings and refresh the page.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 mr-3"
+            >
+              Refresh Page
+            </button>
+            <button
+              onClick={() => navigate(-1)}
+              className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
       {/* Return to Dashboard Button */}
@@ -144,7 +241,7 @@ const VideoCall = () => {
       }}>
         <button
           onClick={() => {
-            const userRole = localStorage.getItem('userRole') || 'patient';
+            const userRole = getUserRole();
             if (userRole === 'Doctor') {
               navigate('/dashboard/doctor');
             } else {
@@ -175,7 +272,7 @@ const VideoCall = () => {
             e.target.style.transform = 'translateY(0)';
           }}
         >
-          ← Return to {localStorage.getItem('userRole') === 'Doctor' ? 'Doctor' : 'Patient'} Dashboard
+          ← Return to {getUserRole() === 'Doctor' ? 'Doctor' : 'Patient'} Dashboard
         </button>
       </div>
       

@@ -55,10 +55,11 @@ class WebSocketService {
             .toString()
             .toLowerCase();
           if (userId) {
+            console.log('Authenticating with:', { userId, userType });
             this.socket.emit('authenticate', { userId, userType });
           }
-        } catch (_) {
-          // ignore
+        } catch (error) {
+          console.error('Error during authentication:', error);
         }
 
         // Now send any queued messages
@@ -78,24 +79,50 @@ class WebSocketService {
         this.isConnecting = false;
       });
 
-      // Handle all event types dynamically
-      this.socket.onAny((eventName, ...args) => {
-        console.log(`Received Socket.IO event "${eventName}":`, args[0]);
-        
-        // Broadcast to all subscribers of this message type
-        const subscribers = this.subscribers.get(eventName) || [];
-        subscribers.forEach(callback => {
-          try {
-            callback(args[0]);
-          } catch (error) {
-            console.error(`Error in subscriber callback for "${eventName}":`, error);
-          }
-        });
+      this.socket.on('authenticated', (data) => {
+        console.log('Socket.IO authenticated successfully:', data);
       });
+
+      this.socket.on('error', (error) => {
+        console.error('Socket.IO server error:', error);
+      });
+
+      // Handle specific chat events
+      this.socket.on('chat:new', (data) => {
+        console.log('Received chat:new event:', data);
+        this.broadcastToSubscribers('chat:new', data);
+      });
+
+      this.socket.on('chat:assigned', (data) => {
+        console.log('Received chat:assigned event:', data);
+        this.broadcastToSubscribers('chat:assigned', data);
+      });
+
+      this.socket.on('chat:message', (data) => {
+        console.log('Received chat:message event:', data);
+        this.broadcastToSubscribers('chat:message', data);
+      });
+
+      this.socket.on('chat:ended', (data) => {
+        console.log('Received chat:ended event:', data);
+        this.broadcastToSubscribers('chat:ended', data);
+      });
+
     } catch (error) {
       console.error('Error creating Socket.IO connection:', error);
       this.isConnecting = false;
     }
+  }
+
+  broadcastToSubscribers(eventName, data) {
+    const subscribers = this.subscribers.get(eventName) || [];
+    subscribers.forEach(callback => {
+      try {
+        callback(data);
+      } catch (error) {
+        console.error(`Error in subscriber callback for "${eventName}":`, error);
+      }
+    });
   }
 
   subscribe(type, callback) {
@@ -103,6 +130,7 @@ class WebSocketService {
       this.subscribers.set(type, new Set());
     }
     this.subscribers.get(type).add(callback);
+    console.log(`Subscribed to ${type}, total subscribers:`, this.subscribers.get(type).size);
     return callback; // Return the callback for unsubscribing
   }
 
@@ -110,6 +138,7 @@ class WebSocketService {
     const subscribers = this.subscribers.get(type);
     if (subscribers) {
       subscribers.delete(callback);
+      console.log(`Unsubscribed from ${type}, remaining subscribers:`, subscribers.size);
     }
   }
 
@@ -128,6 +157,19 @@ class WebSocketService {
       if (!this.isConnecting) {
         this.connect();
       }
+    }
+  }
+
+  // Disconnect method
+  disconnect() {
+    if (this.socket) {
+      console.log('Disconnecting Socket.IO...');
+      this.socket.disconnect();
+      this.socket = null;
+      this.isConnecting = false;
+      this.reconnectAttempts = 0;
+      this.messageQueue = [];
+      this.subscribers.clear();
     }
   }
 }

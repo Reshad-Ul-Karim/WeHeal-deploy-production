@@ -2,11 +2,11 @@ import { User } from "../models/userModel.js";
 import { DoctorAvailability } from "../models/doctorAvailabilityModel.js";
 import { Appointment } from "../models/appointmentModel.js";
 
-// Generate time slots from 8 AM to 12 AM with 1-hour duration and 10-minute gaps
+// Generate time slots from 00:00 (midnight) to 23:50 with 50-minute duration and 10-minute gaps
 const generateTimeSlots = () => {
   const slots = [];
-  const startHour = 8; // 8 AM
-  const endHour = 24; // 12 AM
+  const startHour = 0; // 00:00 (midnight)
+  const endHour = 24; // 24:00 (next midnight)
 
   for (let hour = startHour; hour < endHour; hour++) {
     const startTime = `${hour.toString().padStart(2, "0")}:00`;
@@ -43,7 +43,7 @@ const initializeDoctorAvailability = async (userId) => {
     });
     console.log("Existing availability records:", existingRecords);
 
-    // If there are existing records, update them to use both fields
+    // If there are existing records, update them to use both fields and add missing time slots
     if (existingRecords.length > 0) {
       await Promise.all(existingRecords.map(async (record) => {
         if (!record.doctorId) {
@@ -51,6 +51,16 @@ const initializeDoctorAvailability = async (userId) => {
         } else if (!record.userId) {
           record.userId = record.doctorId;
         }
+        
+        // Check if we need to add the new time slots (00:00 to 7:50)
+        const currentSlotCount = record.timeSlots.length;
+        const expectedSlotCount = 24; // 00:00 to 23:50 = 24 slots
+        
+        if (currentSlotCount < expectedSlotCount) {
+          console.log(`Updating ${record.dayOfWeek} availability to include all 24 time slots`);
+          record.timeSlots = defaultSlots;
+        }
+        
         await record.save();
       }));
     }
@@ -106,22 +116,25 @@ export const getDoctorDashboard = async (req, res) => {
       console.log("Availability after initialization:", availability);
     }
 
-    // Get today's date at midnight UTC
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    // Build both UTC and local day windows to avoid TZ mismatch
+    const startUTC = new Date();
+    startUTC.setUTCHours(0, 0, 0, 0);
+    const endUTC = new Date(startUTC);
+    endUTC.setUTCDate(endUTC.getUTCDate() + 1);
 
-    // Get tomorrow's date at midnight UTC
-    const tomorrow = new Date(today);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    const startLocal = new Date();
+    startLocal.setHours(0, 0, 0, 0);
+    const endLocal = new Date(startLocal);
+    endLocal.setDate(endLocal.getDate() + 1);
 
     // Get today's appointments
     const todaysAppointments = await Appointment.find({
       doctorId: req.user._id,
-      appointmentDate: {
-        $gte: today,
-        $lt: tomorrow,
-      },
       status: { $ne: "cancelled" },
+      $or: [
+        { appointmentDate: { $gte: startUTC, $lt: endUTC } },
+        { appointmentDate: { $gte: startLocal, $lt: endLocal } },
+      ],
     })
       .populate("patientId", "name")
       .sort({ startTime: 1 });
@@ -129,7 +142,7 @@ export const getDoctorDashboard = async (req, res) => {
     // Get upcoming appointments (beyond today)
     const upcomingAppointments = await Appointment.find({
       doctorId: req.user._id,
-      appointmentDate: { $gt: tomorrow },
+      appointmentDate: { $gte: endUTC },
       status: { $ne: "cancelled" },
     })
       .populate("patientId", "name")
@@ -138,7 +151,7 @@ export const getDoctorDashboard = async (req, res) => {
     // Get all scheduled appointments beyond today
     const allScheduledAppointments = await Appointment.find({
       doctorId: req.user._id,
-      appointmentDate: { $gte: today },
+      appointmentDate: { $gte: startUTC },
       status: { $ne: "cancelled" },
     })
       .populate("patientId", "name")
@@ -186,11 +199,11 @@ export const getDoctorDashboard = async (req, res) => {
     // Get waiting patients count
     const waitingPatients = await Appointment.countDocuments({
       doctorId: req.user._id,
-      appointmentDate: {
-        $gte: today,
-        $lt: tomorrow,
-      },
       status: "scheduled",
+      $or: [
+        { appointmentDate: { $gte: startUTC, $lt: endUTC } },
+        { appointmentDate: { $gte: startLocal, $lt: endLocal } },
+      ],
     });
     console.log("waitingPatients", waitingPatients);
     // Get doctor dashboard data
@@ -207,6 +220,7 @@ export const getDoctorDashboard = async (req, res) => {
         upcomingAppointments: upcomingAppointments.length,
         completedAppointments,
         schedule: formattedTodayAppointments,
+        todaysAppointments: formattedTodayAppointments,
         allAppointments: formattedAllAppointments,
         patientQueue: {
           waiting: todaysAppointments.filter(
@@ -237,6 +251,45 @@ export const getDoctorDashboard = async (req, res) => {
       success: false,
       message: "Error fetching doctor dashboard data",
       error: error.message,
+    });
+  }
+};
+
+// Get appointment details by ID
+export const getAppointmentDetails = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    
+    // Find the appointment and populate patient details
+    const appointment = await Appointment.findById(appointmentId)
+      .populate('patientId', 'name email phone')
+      .populate('doctorId', 'name doctorDetails');
+    
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found'
+      });
+    }
+    
+    // Check if the current user is the doctor for this appointment
+    if (appointment.doctorId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You can only view your own appointments.'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: appointment
+    });
+  } catch (error) {
+    console.error('Error fetching appointment details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching appointment details',
+      error: error.message
     });
   }
 };
@@ -460,6 +513,47 @@ export const getPatientDetails = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching patient details",
+      error: error.message,
+    });
+  }
+};
+
+// Migrate existing doctor availability to include all 24 time slots
+export const migrateDoctorAvailability = async (req, res) => {
+  try {
+    console.log("Starting migration of doctor availability to include all 24 time slots");
+    
+    // Get all existing doctor availability records
+    const allAvailability = await DoctorAvailability.find({});
+    console.log(`Found ${allAvailability.length} availability records to migrate`);
+    
+    let migratedCount = 0;
+    const defaultSlots = generateTimeSlots();
+    
+    for (const record of allAvailability) {
+      const currentSlotCount = record.timeSlots.length;
+      const expectedSlotCount = 24; // 00:00 to 23:50 = 24 slots
+      
+      if (currentSlotCount < expectedSlotCount) {
+        console.log(`Migrating ${record.dayOfWeek} for doctor ${record.userId} from ${currentSlotCount} to ${expectedSlotCount} slots`);
+        record.timeSlots = defaultSlots;
+        await record.save();
+        migratedCount++;
+      }
+    }
+    
+    console.log(`Migration completed. ${migratedCount} records updated.`);
+    
+    res.json({
+      success: true,
+      message: `Migration completed successfully. ${migratedCount} availability records updated.`,
+      migratedCount
+    });
+  } catch (error) {
+    console.error("Error in migrateDoctorAvailability:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error migrating doctor availability",
       error: error.message,
     });
   }

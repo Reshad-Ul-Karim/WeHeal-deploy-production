@@ -50,9 +50,14 @@ api.interceptors.response.use(
 );
 
 // Function to handle login
-export const loginUser = async (email, password) => {
+export const loginUser = async (loginData) => {
   try {
-    const response = await authApi.post('/login', { email, password });
+    console.log('API: Sending login request with data:', loginData);
+    console.log('API: Request URL:', '/login');
+    
+    const response = await authApi.post('/login', loginData);
+    console.log('API: Response received:', response.data);
+    
     if (response.data.success) {
       const token = response.data.token;
       localStorage.setItem('token', token);
@@ -61,29 +66,35 @@ export const loginUser = async (email, password) => {
       // Update the default headers for future requests
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       authApi.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      console.log('API: Login successful, token stored');
     }
     return response.data;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('API: Login error:', error);
+    console.error('API: Error response:', error.response?.data);
+    console.error('API: Error status:', error.response?.status);
     throw error;
   }
 };
 
 // Function to handle signup
-export const signupUser = async (name, email, password, phone, role, doctorDetails, driverDetails) => {
+export const signupUser = async (formData) => {
   try {
-    const response = await authApi.post('/signup', { 
-      name, 
-      email, 
-      password, 
-      phone, 
-      role,
-      doctorDetails: role === "Doctor" ? doctorDetails : undefined,
-      driverDetails: role === "Driver" ? driverDetails : undefined
-    });
+    console.log('API: Sending signup request with data:', JSON.stringify(formData, null, 2));
+    const response = await authApi.post('/signup', formData);
+    console.log('API: Signup response received:', response.data);
     return response.data;
   } catch (error) {
-    throw error;
+    console.error('API: Signup error:', error);
+    console.error('API: Error response:', error.response?.data);
+    console.error('API: Error status:', error.response?.status);
+    console.error('API: Error headers:', error.response?.headers);
+    console.error('API: Full error object:', error);
+    
+    // Re-throw with more detailed error message
+    const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+    throw new Error(`Signup failed: ${errorMessage}`);
   }
 };
 

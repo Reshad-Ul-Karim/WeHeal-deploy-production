@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>Emergency WebSocket Test</h1>
+    <button onclick="connect()">Connect</button>
+    <button onclick="sendTest()">Send Test Request</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <div id="messages"></div>
+
+    <script>
+        let ws = null;
+
+        function connect() {
+            ws = new WebSocket('ws://localhost:5001');
+            
+            ws.onopen = function() {
+                addMessage('Connected to Emergency backend');
+            };
+            
+            ws.onmessage = function(event) {
+                addMessage('Received: ' + event.data);
+            };
+            
+            ws.onclose = function() {
+                addMessage('Disconnected');
+            };
+            
+            ws.onerror = function(error) {
+                addMessage('Error: ' + error);
+            };
+        }
+
+        function sendTest() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const testRequest = {
+                    type: 'new_request',
+                    data: {
+                        id: 'test-' + Date.now(),
+                        location: 'Test Location',
+                        description: 'Test emergency request',
+                        emergencyType: 'cardiac',
+                        ambulanceCategory: 'standard',
+                        timestamp: new Date().toISOString(),
+                        patientId: 'test-patient',
+                        patientInfo: {
+                            name: 'Test Patient',
+                            phone: '123-456-7890',
+                            age: '30'
+                        },
+                        status: 'pending'
+                    }
+                };
+                ws.send(JSON.stringify(testRequest));
+                addMessage('Sent test request: ' + JSON.stringify(testRequest));
+            } else {
+                addMessage('WebSocket not connected');
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        function addMessage(message) {
+            const div = document.getElementById('messages');
+            div.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+        }
+    </script>
+</body>
+</html>

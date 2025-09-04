@@ -149,6 +149,7 @@ export const getDoctorAvailability = async (req, res) => {
     }
 
     const selectedDate = new Date(date);
+    selectedDate.setUTCHours(0, 0, 0, 0); // Normalize to midnight UTC for consistent comparison
     const dayOfWeek = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
     
     // Validate doctor exists and is verified
@@ -172,9 +173,20 @@ export const getDoctorAvailability = async (req, res) => {
     });
 
     if (!availability || !availability.isWorkingDay) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor is not available on this day'
+      return res.status(200).json({
+        success: true,
+        data: {
+          doctor: {
+            name: doctor.name,
+            specialization: doctor.doctorDetails.specialization,
+            consultationFee: doctor.doctorDetails.consultationFee
+          },
+          date: selectedDate.toISOString(),
+          dayOfWeek,
+          availableSlots: [],
+          isWorkingDay: false,
+          message: 'Doctor is not available on this day'
+        }
       });
     }
 
@@ -185,13 +197,31 @@ export const getDoctorAvailability = async (req, res) => {
       status: { $ne: 'cancelled' }
     });
 
-    // Filter out booked slots
+    // Get current time for filtering past slots
+    const now = new Date();
+    const currentTime = now.toTimeString().slice(0, 5); // Get HH:MM format
+    const isToday = now.toDateString() === selectedDate.toDateString();
+    
+    // Add 30 minutes buffer to current time to prevent booking slots too close to now
+    const bufferMinutes = 30;
+    const bufferTime = new Date(now.getTime() + bufferMinutes * 60000);
+    const bufferTimeString = bufferTime.toTimeString().slice(0, 5);
+
+    // Filter out booked slots and past time slots
     const availableSlots = availability.timeSlots
       .filter(slot => slot.isAvailable)
       .filter(slot => !existingAppointments.some(appointment => 
         appointment.startTime === slot.startTime && 
         appointment.endTime === slot.endTime
       ))
+      .filter(slot => {
+        // If it's today, filter out past time slots and slots too close to current time
+        if (isToday) {
+          return slot.startTime > bufferTimeString;
+        }
+        // For future dates, show all available slots
+        return true;
+      })
       .map(slot => ({
         startTime: slot.startTime,
         endTime: slot.endTime
@@ -232,6 +262,26 @@ export const bookAppointment = async (req, res) => {
         success: false,
         message: 'All fields are required'
       });
+    }
+
+    // Validate that the appointment is not in the past
+    const appointmentDate = new Date(date);
+    appointmentDate.setUTCHours(0, 0, 0, 0);
+    const now = new Date();
+    const isToday = now.toDateString() === appointmentDate.toDateString();
+    
+    if (isToday) {
+      // Add 30 minutes buffer to current time
+      const bufferMinutes = 30;
+      const bufferTime = new Date(now.getTime() + bufferMinutes * 60000);
+      const bufferTimeString = bufferTime.toTimeString().slice(0, 5);
+      
+      if (startTime <= bufferTimeString) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot book appointments in the past or too close to current time (minimum 30 minutes advance booking required)'
+        });
+      }
     }
 
     // Check if slot is available
@@ -283,25 +333,37 @@ export const cancelAppointment = async (req, res) => {
     const { appointmentId } = req.params;
     const patientId = req.user._id;
 
-    // Find and delete the appointment if it belongs to the patient
-    const deletedAppointment = await Appointment.findOneAndDelete({
+    // Find the appointment and ensure it belongs to the patient
+    const appointment = await Appointment.findOne({
       _id: appointmentId,
       patientId,
-      // Only allow cancelling future appointments
-      appointmentDate: { $gt: new Date() }
+      status: { $ne: 'cancelled' }
     });
 
-    if (!deletedAppointment) {
+    if (!appointment) {
       return res.status(404).json({
         success: false,
-        message: 'Appointment not found or cannot be cancelled'
+        message: 'Appointment not found or already cancelled'
       });
     }
+
+    // Allow cancelling any appointment that is still scheduled,
+    // regardless of whether its start time has passed.
+    if (appointment.status !== 'scheduled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only scheduled appointments can be cancelled'
+      });
+    }
+
+    // Soft-cancel by updating status instead of deleting
+    appointment.status = 'cancelled';
+    await appointment.save();
 
     res.json({
       success: true,
       message: 'Appointment cancelled successfully',
-      data: deletedAppointment
+      data: appointment
     });
   } catch (error) {
     console.error('Error in cancelAppointment:', error);
@@ -311,4 +373,4 @@ export const cancelAppointment = async (req, res) => {
       error: error.message
     });
   }
-}; 
+};

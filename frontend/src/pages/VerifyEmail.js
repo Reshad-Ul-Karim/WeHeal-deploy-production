@@ -82,17 +82,41 @@ const VerifyEmail = () => {
                 type="text"
                 id="code"
                 name="code"
-                placeholder="Enter verification code"
+                placeholder="Enter 6-digit code"
                 value={code}
                 onChange={handleCodeChange}
                 required
-                style={{ letterSpacing: '0.2em', textAlign: 'center', fontSize: '1.2rem', fontWeight: '600' }}
+                maxLength="6"
+                className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                style={{ 
+                  letterSpacing: '0.3em', 
+                  textAlign: 'center', 
+                  fontSize: '1.4rem', 
+                  fontWeight: '700',
+                  fontFamily: 'monospace',
+                  border: '2px solid #e2e8f0',
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)'
+                }}
               />
             </div>
             
             <div className="text-center mt-6">
-              <button type="submit" disabled={isLoading}>
-                {isLoading ? 'Verifying...' : 'Verify Email'}
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className="bg-blueGray-800 text-white active:bg-blueGray-600 text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 w-full ease-linear transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Verifying...
+                  </span>
+                ) : (
+                  'Verify Email'
+                )}
               </button>
             </div>
           </form>

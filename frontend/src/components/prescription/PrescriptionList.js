@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../../utils/api';
 import { 
   Box, 
   Typography, 
@@ -51,19 +52,14 @@ const PrescriptionList = ({ userRole = 'patient' }) => {
   const fetchPrescriptions = async () => {
     try {
       setLoading(true);
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
       const endpoint = userRole === 'doctor' ? '/prescriptions/doctor' : '/prescriptions/patient';
-      const response = await fetch(`${baseURL}${endpoint}?page=${page}&limit=10`, {
-        credentials: 'include'
-      });
+      const response = await api.get(`${endpoint}?page=${page}&limit=10`);
 
-      if (response.ok) {
-        const data = await response.json();
-        setPrescriptions(data.data.prescriptions);
-        setTotalPages(data.data.pagination.totalPages);
+      if (response.data.success) {
+        setPrescriptions(response.data.data.prescriptions);
+        setTotalPages(response.data.data.pagination.totalPages);
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to fetch prescriptions');
+        setError(response.data.message || 'Failed to fetch prescriptions');
       }
     } catch (err) {
       console.error('Error fetching prescriptions:', err);
@@ -76,13 +72,12 @@ const PrescriptionList = ({ userRole = 'patient' }) => {
   const handleDownloadPDF = async (prescriptionId, prescription) => {
     try {
       setDownloading(prev => ({ ...prev, [prescriptionId]: true }));
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
-      const response = await fetch(`${baseURL}/prescriptions/${prescriptionId}/pdf`, {
-        credentials: 'include'
+      const response = await api.get(`/prescriptions/${prescriptionId}/pdf`, {
+        responseType: 'blob'
       });
 
-      if (response.ok) {
-        const blob = await response.blob();
+      if (response.data) {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;

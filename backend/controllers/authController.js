@@ -12,19 +12,45 @@ import {
 export const signup = async (req, res) => {
   const { name, email, password, phone, role, doctorDetails, driverDetails } = req.body;
 
+  console.log('=== SIGNUP REQUEST DEBUG ===');
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
+  console.log('Extracted fields:', { name, email, phone, role, hasPassword: !!password, doctorDetails, driverDetails });
+
   try {
-    if (!name || !email || !password || !phone || !role) {
-      return res.status(400).json({ message: "All fields are required" });
+    // Check required fields
+    const missingFields = [];
+    if (!name) missingFields.push('name');
+    if (!email) missingFields.push('email');
+    if (!password) missingFields.push('password');
+    if (!phone) missingFields.push('phone');
+    if (!role) missingFields.push('role');
+    
+    if (missingFields.length > 0) {
+      console.log('Missing required fields:', missingFields);
+      return res.status(400).json({ 
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        missingFields 
+      });
     }
 
     // Additional validation for doctor role
-    if (role === "Doctor" && (!doctorDetails || !doctorDetails.specialization || !doctorDetails.yearsOfExperience || !doctorDetails.consultationFee)) {
-      return res.status(400).json({ message: "Doctor details are required" });
+    if (role === "Doctor") {
+      if (!doctorDetails) {
+        return res.status(400).json({ message: "Doctor details are required for Doctor role" });
+      }
+      if (!doctorDetails.specialization || !doctorDetails.yearsOfExperience || !doctorDetails.consultationFee) {
+        return res.status(400).json({ message: "Specialization, years of experience, and consultation fee are required for Doctor role" });
+      }
     }
 
     // Additional validation for driver role
-    if (role === "Driver" && (!driverDetails || !driverDetails.vehicleType || !driverDetails.vehicleNumber)) {
-      return res.status(400).json({ message: "Driver details are required" });
+    if (role === "Driver") {
+      if (!driverDetails) {
+        return res.status(400).json({ message: "Driver details are required for Driver role" });
+      }
+      if (!driverDetails.vehicleType || !driverDetails.vehicleNumber) {
+        return res.status(400).json({ message: "Vehicle type and vehicle number are required for Driver role" });
+      }
     }
 
     const userAlreadyExists = await User.findOne({ email });
@@ -137,20 +163,54 @@ export const verifyEmail = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, userId } = req.body;
+  
+  console.log('Login attempt received:', { email, userId, hasPassword: !!password });
 
   try {
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+    if ((!email && !userId) || !password) {
+      console.log('Missing required fields:', { email, userId, hasPassword: !!password });
+      return res.status(400).json({ success: false, message: "Email/User ID and password are required" });
     }
 
-    const user = await User.findOne({ email });
+    let user;
+    
+    // Check if it's a userId login (for customer care officers)
+    if (userId) {
+      console.log('Attempting userId login for:', userId);
+      // Try to find user by userId (stored as email with @weheal.local suffix)
+      const searchEmail = `${userId}@weheal.local`;
+      console.log('Searching for email:', searchEmail);
+      
+      user = await User.findOne({ 
+        email: searchEmail,
+        role: 'CustomerCare'
+      });
+      
+      console.log('User found for userId login:', user ? 'Yes' : 'No');
+      if (user) {
+        console.log('User role:', user.role);
+      }
+    } else {
+      console.log('Attempting email login for:', email);
+      // Regular email login
+      user = await User.findOne({ email });
+      console.log('User found for email login:', user ? 'Yes' : 'No');
+    }
+
     if (!user) {
+      console.log('No user found');
       return res.status(400).json({ success: false, message: "Invalid credentials" });
     }
 
+    console.log('User found, checking password...');
+    console.log('Stored password hash:', user.password);
+    console.log('Provided password:', password);
     const isPasswordValid = await bcryptjs.compare(password, user.password);
+    console.log('Password valid:', isPasswordValid);
+    
     if (!isPasswordValid) {
+      console.log('Password comparison failed');
       return res.status(400).json({ success: false, message: "Invalid credentials" });
     }
 
@@ -159,6 +219,7 @@ export const login = async (req, res) => {
     //   return res.status(400).json({ success: false, message: "Please verify your email first" });
     // }
 
+    console.log('Generating token for user:', user._id);
     const token = generateTokenAndSetCookie(res, user._id);
 
     res.status(200).json({
@@ -174,7 +235,8 @@ export const login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.log("Error in login controller", error.message);
+    console.error('Error in login controller:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };

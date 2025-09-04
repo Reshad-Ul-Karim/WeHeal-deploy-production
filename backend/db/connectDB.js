@@ -6,7 +6,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const connectDB = async () => {
   const primaryUri = process.env.MONGO_URI;
-  const localUri = "mongodb://127.0.0.1:27017/weheal"; // 127.0.0.1 avoids IPv6/socket issues
+  const localUri = "mongodb://127.0.0.1:27017/weHeal"; // 127.0.0.1 avoids IPv6/socket issues
 
   const tryConnect = async (uriLabel, uri, attempts = 3, delayMs = 2000) => {
     let lastError = null;

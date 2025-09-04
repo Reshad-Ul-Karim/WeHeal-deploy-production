@@ -109,10 +109,10 @@ export const createSubscription = async (req, res) => {
       savedPaymentInfo,
       shippingAddress,
       settings: {
-        emailNotifications: settings?.emailNotifications !== false,
-        smsNotifications: settings?.smsNotifications !== false,
+        emailNotifications: settings?.emailNotifications !== false || settings?.notifications !== false,
+        smsNotifications: settings?.smsNotifications !== false || settings?.notifications !== false,
         reminderDays: settings?.reminderDays || 2,
-        autoRetryOnFailure: settings?.autoRetryOnFailure !== false,
+        autoRetryOnFailure: settings?.autoRetryOnFailure !== false || settings?.autoRenewal !== false,
         maxRetryAttempts: settings?.maxRetryAttempts || 3
       }
     });

@@ -527,7 +527,7 @@ const CartPage = () => {
                 background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                 borderRadius: '1rem',
                 boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-                padding: '2rem',
+                padding: '1.5rem',
                 position: 'sticky',
                 top: '1rem',
                 border: '1px solid #e5e7eb'
@@ -535,7 +535,7 @@ const CartPage = () => {
                 <h2 className="gradient-text" style={{
                   fontSize: '1.5rem',
                   fontWeight: '700',
-                  marginBottom: '1.5rem',
+                  marginBottom: '1.25rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem'
@@ -590,7 +590,7 @@ const CartPage = () => {
                   onClick={handleCheckout}
                   style={{
                     width: '100%',
-                    marginTop: '1.5rem',
+                    marginTop: '1.25rem',
                     background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                     color: 'white',
                     padding: '1rem 1.5rem',
@@ -622,7 +622,7 @@ const CartPage = () => {
                   onClick={() => navigate('/marketplace')}
                   style={{
                     width: '100%',
-                    marginTop: '1rem',
+                    marginTop: '0.75rem',
                     background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
                     color: '#374151',
                     padding: '0.75rem 1.5rem',

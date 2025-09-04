@@ -13,16 +13,11 @@ const sampleProducts = [
     price: 12.99,
     category: 'medicine',
     stock: 100,
-    brand: 'MediCare',
-    images: ['/api/uploads/sample-paracetamol.jpg'],
-    medicineDetails: {
-      dosage: '500mg',
-      form: 'tablet',
-      activeIngredient: 'Paracetamol',
-      prescriptionRequired: false,
-      sideEffects: ['Nausea', 'Allergic reactions (rare)'],
-      instructions: 'Take 1-2 tablets every 4-6 hours as needed. Do not exceed 8 tablets in 24 hours.'
-    }
+    manufacturer: 'MediCare',
+    image: '/api/uploads/sample-paracetamol.jpg',
+    dosage: '500mg',
+    composition: 'Paracetamol',
+    prescriptionRequired: false
   },
   {
     name: 'Amoxicillin 250mg',
@@ -30,16 +25,11 @@ const sampleProducts = [
     price: 25.50,
     category: 'medicine',
     stock: 50,
-    brand: 'PharmaCorp',
-    images: ['/api/uploads/sample-amoxicillin.jpg'],
-    medicineDetails: {
-      dosage: '250mg',
-      form: 'capsule',
-      activeIngredient: 'Amoxicillin',
-      prescriptionRequired: true,
-      sideEffects: ['Nausea', 'Diarrhea', 'Allergic reactions'],
-      instructions: 'Take as directed by physician. Complete the full course even if feeling better.'
-    }
+    manufacturer: 'PharmaCorp',
+    image: '/api/uploads/sample-amoxicillin.jpg',
+    dosage: '250mg',
+    composition: 'Amoxicillin',
+    prescriptionRequired: true
   },
   {
     name: 'Ibuprofen 200mg',
@@ -47,16 +37,11 @@ const sampleProducts = [
     price: 18.75,
     category: 'medicine',
     stock: 75,
-    brand: 'HealthPlus',
-    images: ['/api/uploads/sample-ibuprofen.jpg'],
-    medicineDetails: {
-      dosage: '200mg',
-      form: 'tablet',
-      activeIngredient: 'Ibuprofen',
-      prescriptionRequired: false,
-      sideEffects: ['Stomach upset', 'Drowsiness', 'Allergic reactions'],
-      instructions: 'Take with food. 1-2 tablets every 6-8 hours as needed.'
-    }
+    manufacturer: 'HealthPlus',
+    image: '/api/uploads/sample-ibuprofen.jpg',
+    dosage: '200mg',
+    composition: 'Ibuprofen',
+    prescriptionRequired: false
   },
   {
     name: 'Vitamin D3 1000IU',
@@ -64,16 +49,11 @@ const sampleProducts = [
     price: 22.00,
     category: 'medicine',
     stock: 120,
-    brand: 'VitaLife',
-    images: ['/api/uploads/sample-vitamind3.jpg'],
-    medicineDetails: {
-      dosage: '1000IU',
-      form: 'softgel',
-      activeIngredient: 'Cholecalciferol',
-      prescriptionRequired: false,
-      sideEffects: ['Rare: nausea if taken in excess'],
-      instructions: 'Take 1 softgel daily with a meal.'
-    }
+    manufacturer: 'VitaLife',
+    image: '/api/uploads/sample-vitamind3.jpg',
+    dosage: '1000IU',
+    composition: 'Cholecalciferol',
+    prescriptionRequired: false
   },
 
   // Lab Tests
@@ -83,22 +63,17 @@ const sampleProducts = [
     price: 45.00,
     category: 'lab-test',
     stock: 999, // Lab tests don't really have stock limits
-    brand: 'LabCorp',
-    images: ['/api/uploads/sample-cbc.jpg'],
-    labTestDetails: {
-      testType: 'Blood Test',
-      duration: '1-2 hours',
-      preparation: 'No fasting required',
-      sampleType: 'Blood',
-      reportTime: '24-48 hours',
-      testIncludes: [
-        'White Blood Cell Count',
-        'Red Blood Cell Count',
-        'Hemoglobin',
-        'Hematocrit',
-        'Platelet Count'
-      ]
-    }
+    manufacturer: 'LabCorp',
+    image: '/api/uploads/sample-cbc.jpg',
+    testType: 'Blood Test',
+    preparationInstructions: 'No fasting required',
+    sampleType: 'Blood',
+    reportDeliveryTime: '24-48 hours',
+    labOptions: [
+      { labName: 'LabCorp Central', price: 45.00 },
+      { labName: 'Diagnostic Plus', price: 50.00 },
+      { labName: 'Health Lab', price: 42.00 }
+    ]
   },
   {
     name: 'Lipid Profile',
@@ -106,22 +81,17 @@ const sampleProducts = [
     price: 55.00,
     category: 'lab-test',
     stock: 999,
-    brand: 'LabCorp',
-    images: ['/api/uploads/sample-lipid.jpg'],
-    labTestDetails: {
-      testType: 'Blood Test',
-      duration: '30 minutes',
-      preparation: '12-hour fasting required',
-      sampleType: 'Blood',
-      reportTime: '24 hours',
-      testIncludes: [
-        'Total Cholesterol',
-        'LDL Cholesterol',
-        'HDL Cholesterol',
-        'Triglycerides',
-        'Cholesterol Ratio'
-      ]
-    }
+    manufacturer: 'LabCorp',
+    image: '/api/uploads/sample-lipid.jpg',
+    testType: 'Blood Test',
+    preparationInstructions: '12-hour fasting required',
+    sampleType: 'Blood',
+    reportDeliveryTime: '24 hours',
+    labOptions: [
+      { labName: 'LabCorp Central', price: 55.00 },
+      { labName: 'Diagnostic Plus', price: 60.00 },
+      { labName: 'Health Lab', price: 52.00 }
+    ]
   },
   {
     name: 'Thyroid Function Test (TSH, T3, T4)',
@@ -129,22 +99,17 @@ const sampleProducts = [
     price: 85.00,
     category: 'lab-test',
     stock: 999,
-    brand: 'DiagnosticLab',
-    images: ['/api/uploads/sample-thyroid.jpg'],
-    labTestDetails: {
-      testType: 'Blood Test',
-      duration: '30 minutes',
-      preparation: 'No special preparation required',
-      sampleType: 'Blood',
-      reportTime: '48 hours',
-      testIncludes: [
-        'TSH (Thyroid Stimulating Hormone)',
-        'T3 (Triiodothyronine)',
-        'T4 (Thyroxine)',
-        'Free T3',
-        'Free T4'
-      ]
-    }
+    manufacturer: 'DiagnosticLab',
+    image: '/api/uploads/sample-thyroid.jpg',
+    testType: 'Blood Test',
+    preparationInstructions: 'No special preparation required',
+    sampleType: 'Blood',
+    reportDeliveryTime: '48 hours',
+    labOptions: [
+      { labName: 'DiagnosticLab Central', price: 85.00 },
+      { labName: 'LabCorp Central', price: 90.00 },
+      { labName: 'Health Lab', price: 80.00 }
+    ]
   },
   {
     name: 'Diabetes Panel (HbA1c + Glucose)',
@@ -152,21 +117,17 @@ const sampleProducts = [
     price: 65.00,
     category: 'lab-test',
     stock: 999,
-    brand: 'HealthLab',
-    images: ['/api/uploads/sample-diabetes.jpg'],
-    labTestDetails: {
-      testType: 'Blood Test',
-      duration: '30 minutes',
-      preparation: '8-hour fasting required for glucose test',
-      sampleType: 'Blood',
-      reportTime: '24-48 hours',
-      testIncludes: [
-        'HbA1c (3-month average blood sugar)',
-        'Fasting Glucose',
-        'Random Glucose',
-        'Glucose Tolerance interpretation'
-      ]
-    }
+    manufacturer: 'HealthLab',
+    image: '/api/uploads/sample-diabetes.jpg',
+    testType: 'Blood Test',
+    preparationInstructions: '8-hour fasting required for glucose test',
+    sampleType: 'Blood',
+    reportDeliveryTime: '24-48 hours',
+    labOptions: [
+      { labName: 'HealthLab Central', price: 65.00 },
+      { labName: 'Diagnostic Plus', price: 70.00 },
+      { labName: 'LabCorp Central', price: 62.00 }
+    ]
   },
   {
     name: 'Liver Function Test (LFT)',
@@ -174,22 +135,17 @@ const sampleProducts = [
     price: 70.00,
     category: 'lab-test',
     stock: 999,
-    brand: 'MedLab',
-    images: ['/api/uploads/sample-liver.jpg'],
-    labTestDetails: {
-      testType: 'Blood Test',
-      duration: '30 minutes',
-      preparation: 'No fasting required',
-      sampleType: 'Blood',
-      reportTime: '24 hours',
-      testIncludes: [
-        'ALT (Alanine Aminotransferase)',
-        'AST (Aspartate Aminotransferase)',
-        'Bilirubin (Total & Direct)',
-        'Alkaline Phosphatase',
-        'Protein levels'
-      ]
-    }
+    manufacturer: 'MedLab',
+    image: '/api/uploads/sample-liver.jpg',
+    testType: 'Blood Test',
+    preparationInstructions: 'No fasting required',
+    sampleType: 'Blood',
+    reportDeliveryTime: '24 hours',
+    labOptions: [
+      { labName: 'MedLab Central', price: 70.00 },
+      { labName: 'Health Lab', price: 75.00 },
+      { labName: 'Diagnostic Plus', price: 68.00 }
+    ]
   },
   {
     name: 'Kidney Function Test',
@@ -197,22 +153,17 @@ const sampleProducts = [
     price: 60.00,
     category: 'lab-test',
     stock: 999,
-    brand: 'DiagnosticLab',
-    images: ['/api/uploads/sample-kidney.jpg'],
-    labTestDetails: {
-      testType: 'Blood & Urine Test',
-      duration: '45 minutes',
-      preparation: 'No special preparation required',
-      sampleType: 'Blood and Urine',
-      reportTime: '24-48 hours',
-      testIncludes: [
-        'Creatinine',
-        'Blood Urea Nitrogen (BUN)',
-        'eGFR (estimated Glomerular Filtration Rate)',
-        'Uric Acid',
-        'Urinalysis'
-      ]
-    }
+    manufacturer: 'DiagnosticLab',
+    image: '/api/uploads/sample-kidney.jpg',
+    testType: 'Blood & Urine Test',
+    preparationInstructions: 'No special preparation required',
+    sampleType: 'Blood and Urine',
+    reportDeliveryTime: '24-48 hours',
+    labOptions: [
+      { labName: 'DiagnosticLab Central', price: 60.00 },
+      { labName: 'MedLab Central', price: 65.00 },
+      { labName: 'Health Lab', price: 58.00 }
+    ]
   }
 ];
 

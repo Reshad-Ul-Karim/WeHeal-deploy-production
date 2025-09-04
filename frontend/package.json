@@ -6,6 +6,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@heroicons/react": "^2.2.0",
+    "@material-tailwind/react": "^2.1.10",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.0.2",
     "@mui/x-date-pickers": "^8.1.0",
@@ -14,26 +15,26 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "@zegocloud/zego-uikit-prebuilt": "^2.14.3-beta",
-    "autoprefixer": "^10.4.17",
     "axios": "^1.8.4",
     "feather-icons": "^4.29.2",
     "framer-motion": "^12.11.3",
-    "postcss": "^8.4.35",
+    "leaflet": "^1.9.4",
     "react": "^19.1.0",
     "react-datepicker": "^8.3.0",
     "react-dom": "^19.1.0",
+    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.5.0",
     "react-scripts": "5.0.1",
     "recharts": "^2.15.3",
     "socket.io-client": "^4.7.2",
-    "tailwindcss": "^3.4.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "cross-env PORT=5173 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "proxy": "http://localhost:5000"
   },
   "eslintConfig": {
     "extends": [
@@ -53,8 +54,12 @@
       "last 1 safari version"
     ]
   },
-
+  "proxy": "http://localhost:5001",
   "devDependencies": {
-    "cross-env": "^10.0.0"
+    "@craco/craco": "^7.1.0",
+    "autoprefixer": "^10.4.21",
+    "cross-env": "^10.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17"
   }
 }

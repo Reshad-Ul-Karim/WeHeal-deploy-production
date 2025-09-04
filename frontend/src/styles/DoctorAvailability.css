@@ -73,12 +73,49 @@
 }
 
 .availability-container h2 {
-  margin-bottom: 2rem;
+  margin-bottom: 0;
   color: var(--text-primary);
   font-size: 1.875rem;
   font-weight: 700;
-  text-align: center;
   transition: var(--transition);
+}
+
+.availability-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.refresh-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refresh-btn::before {
+  content: "↻";
+  font-size: 1.1rem;
 }
 
 /* Dark mode glass effect */
@@ -100,6 +137,31 @@
   padding: 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
+}
+
+.info-message {
+  background-color: #dbeafe;
+  color: #1e40af;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--primary-color);
+}
+
+.info-message p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.info-message p:first-child {
+  font-weight: 600;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .info-message {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #93c5fd;
+  border-left-color: #60a5fa;
 }
 
 [data-theme="dark"] .error-message {
@@ -165,6 +227,18 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+}
+
+.day-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.slot-count {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .day-header h3 {

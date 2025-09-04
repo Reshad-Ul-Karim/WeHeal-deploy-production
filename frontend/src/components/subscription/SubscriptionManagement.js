@@ -95,7 +95,7 @@ const SubscriptionManagement = () => {
     if (!subscriptionToDelete) return;
 
     try {
-      const response = await subscriptionService.deleteSubscription(subscriptionToDelete._id);
+      const response = await subscriptionService.deleteSubscription(subscriptionToDelete.subscriptionId || subscriptionToDelete._id);
       
       if (response.success) {
         setSuccess('Subscription deleted successfully');

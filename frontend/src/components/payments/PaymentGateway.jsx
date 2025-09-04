@@ -28,6 +28,7 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import LoyaltyIcon from '@mui/icons-material/Loyalty';
+import { initPayment, verifyPayment } from '../../services/paymentsClient';
 
 const PaymentMethodCard = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -50,7 +51,7 @@ const SavedMethodCard = styled(Card)(({ theme, selected }) => ({
   }
 }));
 
-const PaymentGateway = ({ open, onClose, amount, paymentType, onSuccess, userProfile }) => {
+const PaymentGateway = ({ open, onClose, amount, paymentType, onSuccess, userProfile, orderId }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedMethod, setSelectedMethod] = useState('');
   const [loading, setLoading] = useState(false);
@@ -87,197 +88,89 @@ const PaymentGateway = ({ open, onClose, amount, paymentType, onSuccess, userPro
     return Math.floor(amount / 100) * 2;
   };
 
-  const handlePayment = () => {
-    console.log('handlePayment called');
+  const handlePayment = async () => {
+    console.log('handlePayment called with real API');
     setLoading(true);
-    // Generate transaction ID
-    const transactionId = `WH-${Math.random().toString(36).substr(2, 9)}`;
     
-    // Calculate loyalty points
-    const pointsEarned = calculateLoyaltyPoints(amount);
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      setLoading(false);
-      setShowSuccess(true);
-      
-      // Prepare payment data
+    try {
+      // Prepare payment data for API call
       const paymentData = {
-        orderId: transactionId,
-        transactionId: transactionId, // Add both for compatibility
-        status: 'completed',
-        amount,
-        paymentType,
-        paymentMethod: activeTab === 0 ? 'mobile' : activeTab === 1 ? 'card' : 'bank',
-        details: activeTab === 0 ? { 
+        orderId: orderId || `WH-${Math.random().toString(36).substr(2, 9)}`,
+        amount: amount,
+        paymentType: paymentType,
+        paymentMethod: activeTab === 0 ? selectedMethod : activeTab === 1 ? 'card' : 'bank',
+        description: `${paymentType} payment`,
+        paymentDetails: activeTab === 0 ? { 
           mobileMethod: selectedMethod,
           mobileNumber,
           pin: '****' // Don't store actual PIN
-        } : activeTab === 1 ? cardDetails : bankDetails,
-        loyaltyPoints: pointsEarned,
-        timestamp: new Date().toISOString()
+        } : activeTab === 1 ? cardDetails : bankDetails
       };
 
-      console.log('=== Payment Data Being Sent ===');
+      console.log('=== Initiating Real Payment ===');
       console.log('Payment data:', paymentData);
-      console.log('Payment method:', paymentData.paymentMethod);
-      console.log('Payment type:', paymentData.paymentType);
-      console.log('Amount:', paymentData.amount);
-      console.log('Transaction ID:', paymentData.transactionId);
-      console.log('Payment method validation:', {
-        paymentMethod: paymentData.paymentMethod,
-        isValidMethod: ['mobile', 'card', 'bank', 'bKash', 'Rocket', 'Nagad', 'Qcash'].includes(paymentData.paymentMethod)
-      });
-      console.log('Payment data types:', {
-        orderId: typeof paymentData.orderId,
-        amount: typeof paymentData.amount,
-        paymentMethod: typeof paymentData.paymentMethod,
-        paymentType: typeof paymentData.paymentType,
-        transactionId: typeof paymentData.transactionId,
-        details: typeof paymentData.details
-      });
-      console.log('Payment data validation:', {
-        hasOrderId: !!paymentData.orderId,
-        hasAmount: !!paymentData.amount,
-        hasPaymentMethod: !!paymentData.paymentMethod,
-        hasPaymentType: !!paymentData.paymentType,
-        hasTransactionId: !!paymentData.transactionId,
-        hasDetails: !!paymentData.details
-      });
-      console.log('Payment method enum validation:', {
-        paymentMethod: paymentData.paymentMethod,
-        validMethods: ['mobile', 'card', 'bank', 'bKash', 'Rocket', 'Nagad', 'Qcash'],
-        isValid: ['mobile', 'card', 'bank', 'bKash', 'Rocket', 'Nagad', 'Qcash'].includes(paymentData.paymentMethod)
-      });
-      console.log('Payment data structure validation:', {
-        orderId: {
-          value: paymentData.orderId,
-          type: typeof paymentData.orderId,
-          hasValue: !!paymentData.orderId
-        },
-        amount: {
-          value: paymentData.amount,
-          type: typeof paymentData.amount,
-          hasValue: !!paymentData.amount
-        },
-        paymentMethod: {
-          value: paymentData.paymentMethod,
-          type: typeof paymentData.paymentMethod,
-          hasValue: !!paymentData.paymentMethod
-        },
-        paymentType: {
-          value: paymentData.paymentType,
-          type: typeof paymentData.paymentType,
-          hasValue: !!paymentData.paymentType
-        },
-        transactionId: {
-          value: paymentData.transactionId,
-          type: typeof paymentData.transactionId,
-          hasValue: !!paymentData.transactionId
-        },
-        details: {
-          value: paymentData.details,
-          type: typeof paymentData.details,
-          hasValue: !!paymentData.details
-        }
-      });
-      console.log('Payment data enum validation:', {
-        paymentMethod: {
-          value: paymentData.paymentMethod,
-          validMethods: ['mobile', 'card', 'bank', 'bKash', 'Rocket', 'Nagad', 'Qcash'],
-          isValid: ['mobile', 'card', 'bank', 'bKash', 'Rocket', 'Nagad', 'Qcash'].includes(paymentData.paymentMethod)
-        },
-        paymentType: {
-          value: paymentData.paymentType,
-          validTypes: ['marketplace', 'consultation', 'test'],
-          isValid: ['marketplace', 'consultation', 'test'].includes(paymentData.paymentType)
-        }
-      });
-      console.log('Payment data final validation:', {
-        orderId: {
-          value: paymentData.orderId,
-          type: typeof paymentData.orderId,
-          hasValue: !!paymentData.orderId,
-          isValid: typeof paymentData.orderId === 'string' && paymentData.orderId.length > 0
-        },
-        amount: {
-          value: paymentData.amount,
-          type: typeof paymentData.amount,
-          hasValue: !!paymentData.amount,
-          isValid: typeof paymentData.amount === 'number' && paymentData.amount > 0
-        },
-        paymentMethod: {
-          value: paymentData.paymentMethod,
-          type: typeof paymentData.paymentMethod,
-          hasValue: !!paymentData.paymentMethod,
-          isValid: ['mobile', 'card', 'bank', 'bKash', 'Rocket', 'Nagad', 'Qcash'].includes(paymentData.paymentMethod)
-        },
-        paymentType: {
-          value: paymentData.paymentType,
-          type: typeof paymentData.paymentType,
-          hasValue: !!paymentData.paymentType,
-          isValid: ['marketplace', 'consultation', 'test'].includes(paymentData.paymentType)
-        },
-        transactionId: {
-          value: paymentData.transactionId,
-          type: typeof paymentData.transactionId,
-          hasValue: !!paymentData.transactionId,
-          isValid: typeof paymentData.transactionId === 'string' && paymentData.transactionId.length > 0
-        }
-      });
-      console.log('Payment data complete validation summary:', {
-        orderId: {
-          value: paymentData.orderId,
-          type: typeof paymentData.orderId,
-          hasValue: !!paymentData.orderId,
-          isValid: typeof paymentData.orderId === 'string' && paymentData.orderId.length > 0,
-          length: paymentData.orderId?.length || 0
-        },
-        amount: {
-          value: paymentData.amount,
-          type: typeof paymentData.amount,
-          hasValue: !!paymentData.amount,
-          isValid: typeof paymentData.amount === 'number' && paymentData.amount > 0,
-          isPositive: paymentData.amount > 0
-        },
-        paymentMethod: {
-          value: paymentData.paymentMethod,
-          type: typeof paymentData.paymentMethod,
-          hasValue: !!paymentData.paymentMethod,
-          isValid: ['mobile', 'card', 'bank', 'bKash', 'Rocket', 'Nagad', 'Qcash'].includes(paymentData.paymentMethod),
-          enumValues: ['mobile', 'card', 'bank', 'bKash', 'Rocket', 'Nagad', 'Qcash']
-        },
-        paymentType: {
-          value: paymentData.paymentType,
-          type: typeof paymentData.paymentType,
-          hasValue: !!paymentData.paymentType,
-          isValid: ['marketplace', 'consultation', 'test'].includes(paymentData.paymentType),
-          enumValues: ['marketplace', 'consultation', 'test']
-        },
-        transactionId: {
-          value: paymentData.transactionId,
-          type: typeof paymentData.transactionId,
-          hasValue: !!paymentData.transactionId,
-          isValid: typeof paymentData.transactionId === 'string' && paymentData.transactionId.length > 0,
-          length: paymentData.transactionId?.length || 0
-        }
-      });
-      console.log('=== End Payment Data ===');
+      console.log('Order ID:', orderId);
+      console.log('Amount:', amount);
+      console.log('Payment Type:', paymentType);
 
-      // Simulate success message and then call onSuccess
-      setTimeout(() => {
-        setShowSuccess(false);
-        console.log('Payment successful, calling onSuccess with data:', paymentData);
-        // Call onSuccess with payment data
-        if (onSuccess && typeof onSuccess === 'function') {
-          onSuccess(paymentData);
-        } else {
-          console.error('onSuccess function is not available or not a function');
-        }
-        // Close the modal immediately after calling onSuccess
-        onClose();
-      }, 1500);
-    }, 2000);
+      // Call the actual payment API
+      const response = await initPayment(paymentData);
+      
+      console.log('Payment initialization response:', response);
+      
+      if (response.success) {
+        setShowSuccess(true);
+        
+        // Simulate payment verification (in real app, this would be called by payment gateway callback)
+        setTimeout(async () => {
+          try {
+            const verifyData = {
+              orderId: paymentData.orderId,
+              transactionId: response.data.transactionId || `TXN-${Date.now()}`,
+              status: 'completed'
+            };
+            
+            console.log('Verifying payment:', verifyData);
+            const verifyResponse = await verifyPayment(verifyData);
+            console.log('Payment verification response:', verifyResponse);
+            
+            setShowSuccess(false);
+            
+            // Call onSuccess with payment data
+            if (onSuccess && typeof onSuccess === 'function') {
+              onSuccess({
+                ...paymentData,
+                status: 'completed',
+                transactionId: verifyData.transactionId,
+                response: verifyResponse
+              });
+            }
+            
+            onClose();
+          } catch (verifyError) {
+            console.error('Payment verification error:', verifyError);
+            setLoading(false);
+            alert('Payment verification failed. Please contact support.');
+          }
+        }, 2000);
+      } else {
+        throw new Error(response.message || 'Payment initialization failed');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      setLoading(false);
+      
+      let errorMessage = 'Payment failed. Please try again.';
+      if (error.response?.status === 401) {
+        errorMessage = 'Authentication failed. Please login again.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.message || 'Invalid payment data.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      }
+      
+      alert(errorMessage);
+    }
   };
 
   const handleCardInput = (e) => {

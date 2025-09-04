@@ -87,7 +87,7 @@ const PrescriptionForm = () => {
     try {
       console.log('Fetching appointment details for ID:', appointmentId);
       const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
-      const response = await fetch(`${baseURL}/appointments/${appointmentId}`, {
+      const response = await fetch(`${baseURL}/doctor/appointment/${appointmentId}`, {
         credentials: 'include'
       });
       

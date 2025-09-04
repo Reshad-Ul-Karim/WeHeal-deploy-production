@@ -52,10 +52,40 @@ const ServicesLanding = () => {
         <div style={{
           maxWidth: 960,
           margin: '0 auto',
-          padding: '24px 16px'
+          padding: '24px 16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start'
         }}>
-          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#111827' }}>Emergency Service</h1>
-          <p style={{ margin: '8px 0 0', color: '#6b7280' }}>Choose a service to continue</p>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#111827' }}>Emergency Service</h1>
+            <p style={{ margin: '8px 0 0', color: '#6b7280' }}>Choose a service to continue</p>
+          </div>
+          <button 
+            onClick={() => navigate('/dashboard')}
+            style={{
+              background: '#000000',
+              color: '#ffffff',
+              border: '2px solid #000000',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              flexShrink: 0
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = '#1a1a1a';
+              e.target.style.borderColor = '#1a1a1a';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = '#000000';
+              e.target.style.borderColor = '#000000';
+            }}
+          >
+            ← Dashboard
+          </button>
         </div>
       </div>
 
@@ -76,10 +106,10 @@ const ServicesLanding = () => {
           gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
           gap: 12
         }}>
-          <ServiceCard icon="🧴" title="Oxygen Cylinder" subtitle="Home oxygen delivery" onClick={() => {}} />
+          <ServiceCard icon="🧴" title="Oxygen Cylinder" subtitle="Home oxygen delivery" onClick={() => navigate('/emergency/oxygen-cylinder')} />
           <ServiceCard icon="👨‍⚕️" title="Emergency Doctor" subtitle="Instant consultation" onClick={() => {}} />
-          <ServiceCard icon="🧑‍⚕️" title="Nurse" subtitle="On-demand nursing" onClick={() => {}} />
-          <ServiceCard icon="🦽" title="Wheelchair" subtitle="Mobility assistance" onClick={() => {}} />
+          <ServiceCard icon="🧑‍⚕️" title="Nurse" subtitle="On-demand nursing" onClick={() => navigate('/emergency/nurse-marketplace')} />
+          <ServiceCard icon="🦽" title="Wheelchair" subtitle="Mobility assistance" onClick={() => navigate('/emergency/wheelchair')} />
         </div>
       </div>
     </div>

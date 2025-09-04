@@ -41,6 +41,9 @@ router.delete('/:id', isDoctor, deletePrescription);
 router.get('/patient', getPatientPrescriptions);
 router.get('/patient/:id', getPrescriptionById);
 
+// Generic fetch by ID (accessible to authenticated user; controller should enforce access)
+router.get('/:id', getPrescriptionById);
+
 // PDF generation (accessible by both doctor and patient)
 router.get('/:id/pdf', generatePrescriptionPDF);
 

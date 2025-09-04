@@ -58,11 +58,17 @@ const DoctorDashboard = () => {
   };
 
   const handleLogout = async () => {
+    // Show confirmation dialog
+    const confirmed = window.confirm('Are you sure you want to logout?');
+    if (!confirmed) return;
+    
     try {
       await logoutUser();
+      showNotification('Logged out successfully', 'success');
       navigate('/login');
     } catch (err) {
       console.error('Logout error:', err);
+      showNotification('Error during logout. Please try again.', 'error');
     }
   };
 
@@ -400,7 +406,7 @@ const DoctorDashboard = () => {
             </div>
           )}
           <span>Dr. {user.name}</span>
-          <button className="btn btn-secondary" onClick={handleLogout}>
+          <button className="logout-btn" onClick={handleLogout} title="Logout">
             <i data-feather="log-out"></i>
             Logout
           </button>
@@ -662,32 +668,7 @@ const DoctorDashboard = () => {
               </table>
             </div>
 
-            <div className="alerts-panel">
-              <h3>Critical Actions</h3>
-              <div className="critical-actions">
-                <button 
-                  className="btn-critical"
-                  onClick={() => showNotification('Opening lab results...', 'info')}
-                >
-                  <i data-feather="alert-circle"></i>
-                  Review Lab Results ({dashboardData?.doctorData?.criticalActions?.labResults || 0})
-                </button>
-                <button 
-                  className="btn-critical"
-                  onClick={() => showNotification('Opening pending reports...', 'info')}
-                >
-                  <i data-feather="file-text"></i>
-                  Pending Reports ({dashboardData?.doctorData?.criticalActions?.pendingReports || 0})
-                </button>
-                <button 
-                  className="btn-critical"
-                  onClick={() => showNotification('Opening urgent messages...', 'info')}
-                >
-                  <i data-feather="message-square"></i>
-                  Urgent Messages ({dashboardData?.doctorData?.criticalActions?.urgentMessages || 0})
-                </button>
-              </div>
-            </div>
+
           </div>
         </>
       )}

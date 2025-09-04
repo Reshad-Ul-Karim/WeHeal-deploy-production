@@ -7,9 +7,15 @@ const ambulanceSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  chassisNumber: {
+    type: String,
+    required: [true, 'Chassis number is required'],
+    unique: true,
+    trim: true
+  },
   type: {
     type: String,
-    enum: ['basic', 'advanced', 'mobile-icu', 'patient-transport'],
+    enum: ['basic', 'advanced', 'mobile-icu', 'patient-transport', 'vip'],
     default: 'basic'
   },
   capacity: {

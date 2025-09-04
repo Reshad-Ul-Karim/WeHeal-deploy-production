@@ -28,7 +28,7 @@ const paymentSchema = new mongoose.Schema({
 	},
 	currency: {
 		type: String,
-		default: 'INR',
+		default: 'BDT',
 	},
 	paymentMethod: {
 		type: String,
@@ -43,6 +43,7 @@ const paymentSchema = new mongoose.Schema({
 	},
 	paymentType: {
 		type: String,
+		enum: ['marketplace', 'consultation', 'doctor_consultation', 'emergency_nurse', 'subscription', 'oxygen-cylinder', 'wheelchair'],
 		default: 'marketplace',
 	},
 	description: {

@@ -14,12 +14,48 @@ console.log('=== End Import Debug ===');
 
 export const initPayment = async (req, res) => {
 	try {
+		console.log('=== initPayment called ===');
+		console.log('Request body:', JSON.stringify(req.body, null, 2));
+		console.log('User:', req.user);
+		
 		const userId = req.user._id;
 		const { orderId, amount, paymentMethod, paymentType = 'marketplace', paymentDetails = {} } = req.body;
 
+		console.log('Extracted values:', { userId, orderId, amount, paymentMethod, paymentType });
+
 		if (!orderId || !amount || !paymentMethod) {
+			console.log('Missing required fields:', { orderId: !!orderId, amount: !!amount, paymentMethod: !!paymentMethod });
 			return res.status(400).json({ success: false, message: 'orderId, amount, and paymentMethod are required' });
 		}
+
+		// Set description based on payment type
+		let description = '';
+		if (paymentType === 'doctor_consultation') {
+			description = "Doctor's consultancy";
+		} else if (paymentType === 'consultation') {
+			description = 'Consultation fee';
+		} else if (paymentType === 'emergency_nurse') {
+			description = 'Emergency nurse service';
+		} else if (paymentType === 'subscription') {
+			description = 'Subscription payment';
+		} else if (paymentType === 'oxygen-cylinder') {
+			description = 'Oxygen cylinder subscription';
+		} else if (paymentType === 'wheelchair') {
+			description = 'Wheelchair subscription';
+		} else {
+			description = 'Marketplace purchase';
+		}
+
+		console.log('Creating payment with data:', {
+			orderId,
+			userId,
+			amount,
+			paymentMethod,
+			paymentType,
+			status: 'pending',
+			paymentDetails,
+			description,
+		});
 
 		const payment = await Payment.create({
 			orderId,
@@ -29,8 +65,10 @@ export const initPayment = async (req, res) => {
 			paymentType,
 			status: 'pending',
 			paymentDetails,
+			description,
 		});
 
+		console.log('Payment created successfully:', payment._id);
 		return res.status(201).json({ success: true, data: payment });
 	} catch (error) {
 		console.error('initPayment error', error);
@@ -51,16 +89,57 @@ export const verifyPayment = async (req, res) => {
 
 		payment.status = status;
 		payment.transactionId = transactionId || payment.transactionId;
+		if (status === 'completed') {
+			payment.completedAt = new Date();
+		}
 		await payment.save();
 
-		// Update order payment status if completed
-		const order = await Order.findOne({ orderId, userId });
-		if (order) {
-			order.paymentStatus = status === 'completed' ? 'paid' : status === 'failed' ? 'failed' : order.paymentStatus;
-			if (status === 'completed' && order.status === 'pending') {
-				order.status = 'confirmed';
+		// Update order payment status if completed (for marketplace orders)
+		if (payment.paymentType === 'marketplace') {
+			const order = await Order.findOne({ orderId, userId });
+			if (order) {
+				order.paymentStatus = status === 'completed' ? 'paid' : status === 'failed' ? 'failed' : order.paymentStatus;
+				if (status === 'completed' && order.status === 'pending') {
+					order.status = 'confirmed';
+				}
+				await order.save();
 			}
-			await order.save();
+		}
+
+		// Update oxygen cylinder order status if completed
+		if (payment.paymentType === 'oxygen-cylinder') {
+			const OxygenCylinderOrder = (await import('../models/oxygenCylinderOrderModel.js')).default;
+			const order = await OxygenCylinderOrder.findOne({ _id: orderId, userId });
+			if (order) {
+				order.payment = {
+					...order.payment,
+					status: status === 'completed' ? 'completed' : status === 'failed' ? 'failed' : 'pending',
+					transactionId: transactionId || order.payment?.transactionId,
+					paidAt: status === 'completed' ? new Date() : order.payment?.paidAt
+				};
+				if (status === 'completed' && order.status === 'pending') {
+					order.status = 'confirmed';
+				}
+				await order.save();
+			}
+		}
+
+		// Update wheelchair order status if completed
+		if (payment.paymentType === 'wheelchair') {
+			const WheelchairOrder = (await import('../models/wheelchairOrderModel.js')).default;
+			const order = await WheelchairOrder.findOne({ _id: orderId, userId });
+			if (order) {
+				order.payment = {
+					...order.payment,
+					status: status === 'completed' ? 'completed' : status === 'failed' ? 'failed' : 'pending',
+					transactionId: transactionId || order.payment?.transactionId,
+					paidAt: status === 'completed' ? new Date() : order.payment?.paidAt
+				};
+				if (status === 'completed' && order.status === 'pending') {
+					order.status = 'confirmed';
+				}
+				await order.save();
+			}
 		}
 
 		return res.json({ success: true, data: payment });

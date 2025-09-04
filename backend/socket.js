@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import Driver from './models/emergency/driver.model.js';
 import EmergencyRequest from './models/emergency/emergencyRequest.model.js';
+import LocationService from './services/locationService.js';
 
 // Global socket.io instance
 let io;
@@ -34,9 +35,14 @@ export function initializeSocket(server) {
         // Store the socket connection with user ID
         connectedSockets.set(userId, socket.id);
         
-        // If it's a driver, update their socket ID in DB
+        // If it's a driver, update their socket ID in DB and join drivers room
         if (userType === 'driver') {
           try {
+            // Always join the drivers room first (for immediate broadcasting)
+            socket.join('drivers');
+            console.log(`Driver ${userId} joined 'drivers' room with socket ${socket.id}`);
+            
+            // Try to update emergency Driver model, create if doesn't exist
             await Driver.findOneAndUpdate(
               { driverId: userId },
               { 
@@ -46,12 +52,17 @@ export function initializeSocket(server) {
               },
               { upsert: true, new: true }
             );
-            console.log(`Driver ${userId} is now online with socket ${socket.id}`);
+            console.log(`Driver ${userId} database record updated`);
             
-            // Join driver room for broadcasting
-            socket.join('drivers');
+            // Debug: Check drivers room membership
+            const driversRoom = io.sockets.adapter.rooms.get('drivers');
+            console.log(`Drivers room now has ${driversRoom ? driversRoom.size : 0} members`);
+            
           } catch (error) {
             console.error('Error updating driver status:', error);
+            // Still join the room even if DB update fails
+            socket.join('drivers');
+            console.log(`Driver ${userId} joined 'drivers' room despite DB error`);
           }
         } else if (userType === 'patient') {
           // Join patients room
@@ -61,6 +72,11 @@ export function initializeSocket(server) {
           // Customer care agents group
           socket.join('customer-care');
           console.log(`CustomerCare ${userId} is now online with socket ${socket.id}`);
+          console.log(`CustomerCare ${userId} joined customer-care room`);
+          
+          // Debug: Check room membership
+          const customerCareRoom = io.sockets.adapter.rooms.get('customer-care');
+          console.log(`Customer care room now has ${customerCareRoom ? customerCareRoom.size : 0} members`);
         }
         
         socket.userId = userId;
@@ -103,7 +119,10 @@ export function initializeSocket(server) {
         
         // Broadcast to all connected drivers
         console.log('Broadcasting emergency request to all drivers...');
+        const driversRoom = io.sockets.adapter.rooms.get('drivers');
+        console.log(`Current drivers room has ${driversRoom ? driversRoom.size : 0} members`);
         io.to('drivers').emit('new_request', data);
+        console.log('Emergency request broadcasted to drivers room');
         
         // Acknowledge receipt to the requesting patient
         socket.emit('request_received', {
@@ -121,8 +140,20 @@ export function initializeSocket(server) {
     // Patient starts or continues a chat -> notify available customer care
     socket.on('chat:new', async (data) => {
       try {
+        console.log('=== CHAT:NEW EVENT RECEIVED ===');
+        console.log('Data:', data);
+        console.log('Socket user ID:', socket.userId);
+        console.log('Socket user type:', socket.userType);
+        console.log('Connected sockets count:', connectedSockets.size);
+        
+        // Get all customer care agents in the room
+        const customerCareRoom = io.sockets.adapter.rooms.get('customer-care');
+        console.log('Customer care room members:', customerCareRoom ? customerCareRoom.size : 0);
+        
         // Broadcast to all customer care agents
+        console.log('Broadcasting chat:new to customer-care room...');
         io.to('customer-care').emit('chat:new', data);
+        console.log('=== END CHAT:NEW EVENT ===');
       } catch (err) {
         console.error('chat:new error', err);
       }
@@ -152,6 +183,42 @@ export function initializeSocket(server) {
         console.error('chat:message error', err);
       }
     });
+
+    // Handle chat termination
+    socket.on('chat:end', async (data) => {
+      try {
+        const { patientId, agentId } = data;
+        
+        // Notify the patient that the chat has ended
+        const patientSocketId = connectedSockets.get(patientId);
+        if (patientSocketId) {
+          io.to(patientSocketId).emit('chat:ended', { 
+            message: 'Chat session has ended by the agent',
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        // Notify the agent that the chat has ended
+        const agentSocketId = connectedSockets.get(agentId);
+        if (agentSocketId) {
+          io.to(agentSocketId).emit('chat:ended', { 
+            message: 'Chat session has ended by the patient',
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        // Notify all customer care agents to update their queue
+        io.to('customer-care').emit('chat:ended', { 
+          patientId, 
+          agentId,
+          timestamp: new Date().toISOString()
+        });
+        
+        console.log(`Chat ended between patient ${patientId} and agent ${agentId}`);
+      } catch (err) {
+        console.error('chat:end error', err);
+      }
+    });
     
     // Handle request acceptance from driver
     socket.on('accept_request', async (data) => {
@@ -164,14 +231,42 @@ export function initializeSocket(server) {
         
         const { requestId, driver } = data;
         
+        // Get complete driver information from database
+        let completeDriverInfo = driver;
+        try {
+          const driverFromDB = await Driver.findById(socket.userId)
+            .populate('vehicle', 'registrationNumber chassisNumber type')
+            .select('-password');
+          
+          if (driverFromDB) {
+            completeDriverInfo = {
+              id: driverFromDB._id,
+              name: driverFromDB.name,
+              phone: driverFromDB.phone,
+              email: driverFromDB.email,
+              licenseNumber: driverFromDB.licenseNumber,
+              vehicleType: driverFromDB.vehicleType,
+              vehicleNumber: driverFromDB.vehicleNumber,
+              carRegistration: driverFromDB.vehicle?.registrationNumber || driverFromDB.vehicleDetails?.registrationNumber,
+              ambulanceType: driverFromDB.vehicle?.type || driverFromDB.vehicleDetails?.ambulanceType,
+              chassisNumber: driverFromDB.vehicle?.chassisNumber || driverFromDB.vehicleDetails?.chassisNumber,
+              isOnline: driverFromDB.isOnline,
+              rating: driverFromDB.rating
+            };
+          }
+        } catch (dbError) {
+          console.error('Error fetching driver info from database:', dbError);
+          // Continue with provided driver info if DB fetch fails
+        }
+        
         // Update request in database
         try {
           const updatedRequest = await EmergencyRequest.findOneAndUpdate(
             { requestId },
             { 
               status: 'accepted',
-              driverId: driver.id || socket.userId,
-              driverInfo: driver,
+              driverId: completeDriverInfo.id || socket.userId,
+              driverInfo: completeDriverInfo,
               'statusHistory.accepted': new Date()
             },
             { new: true }
@@ -189,8 +284,8 @@ export function initializeSocket(server) {
         io.to('drivers').emit('request_status_update', {
           requestId,
           status: 'accepted',
-          driverId: driver.id || socket.userId,
-          driver: driver
+          driverId: completeDriverInfo.id || socket.userId,
+          driver: completeDriverInfo
         });
         
         // Forward the acceptance to the patient who made the request
@@ -201,7 +296,7 @@ export function initializeSocket(server) {
             io.to(patientSocketId).emit('request_status_update', {
               requestId,
               status: 'accepted',
-              driver: driver
+              driver: completeDriverInfo
             });
           }
         }
@@ -253,7 +348,7 @@ export function initializeSocket(server) {
       }
     });
 
-    // Update driver location
+    // Update driver location (legacy - keeping for backward compatibility)
     socket.on('update-location', async (data) => {
       try {
         if (!socket.userId || socket.userType !== 'driver') {
@@ -274,6 +369,467 @@ export function initializeSocket(server) {
       } catch (error) {
         console.error('Location update error:', error);
         socket.emit('error', { message: 'Failed to update location' });
+      }
+    });
+
+    // === RIDE MANAGEMENT EVENTS ===
+    
+    // Handle ride start
+    socket.on('ride:start', async (data) => {
+      try {
+        if (!socket.userId || socket.userType !== 'driver') {
+          return socket.emit('error', { message: 'Unauthorized - Only drivers can start rides' });
+        }
+        
+        const { requestId, pickupLocation, estimatedPickupTime } = data;
+        
+        console.log(`Driver ${socket.userId} starting ride for request ${requestId}`);
+        
+        // Update ride status in database
+        const updateData = {
+          'rideDetails.rideStatus.isStarted': true,
+          'rideDetails.timing.pickupTime': new Date(),
+          status: 'started_journey',
+          'statusHistory.started_journey': new Date()
+        };
+        
+        if (pickupLocation) {
+          updateData['rideDetails.pickup'] = pickupLocation;
+        }
+        
+        if (estimatedPickupTime) {
+          updateData['rideDetails.timing.estimatedPickupTime'] = new Date(estimatedPickupTime);
+        }
+        
+        const updatedRequest = await EmergencyRequest.findOneAndUpdate(
+          { requestId },
+          { $set: updateData },
+          { new: true }
+        );
+        
+        if (!updatedRequest) {
+          return socket.emit('error', { message: 'Request not found' });
+        }
+        
+        // Notify patient that ride has started
+        if (updatedRequest.patientId) {
+          const patientSocketId = connectedSockets.get(updatedRequest.patientId);
+          if (patientSocketId) {
+            io.to(patientSocketId).emit('ride:started', {
+              requestId,
+              pickupLocation: updatedRequest.rideDetails.pickup,
+              estimatedPickupTime: updatedRequest.rideDetails.timing.estimatedPickupTime
+            });
+          }
+        }
+        
+        socket.emit('ride:started', { success: true, requestId });
+      } catch (error) {
+        console.error('Error starting ride:', error);
+        socket.emit('error', { message: 'Error starting ride' });
+      }
+    });
+    
+    // Handle ride completion
+    socket.on('ride:complete', async (data) => {
+      try {
+        if (!socket.userId || socket.userType !== 'driver') {
+          return socket.emit('error', { message: 'Unauthorized - Only drivers can complete rides' });
+        }
+        
+        const { requestId, dropoffLocation, totalDistance, totalDuration, averageSpeed, finalFare } = data;
+        
+        console.log(`Driver ${socket.userId} completing ride for request ${requestId}`);
+        
+        // Update ride completion in database
+        const updateData = {
+          'rideDetails.rideStatus.isCompleted': true,
+          'rideDetails.timing.dropoffTime': new Date(),
+          'rideDetails.timing.actualDropoffTime': new Date(),
+          status: 'completed',
+          'statusHistory.completed': new Date()
+        };
+        
+        if (dropoffLocation) {
+          updateData['rideDetails.destination'] = dropoffLocation;
+        }
+        
+        if (totalDistance) {
+          updateData['rideDetails.metrics.totalDistance'] = totalDistance;
+        }
+        
+        if (totalDuration) {
+          updateData['rideDetails.metrics.totalDuration'] = totalDuration;
+        }
+        
+        if (averageSpeed) {
+          updateData['rideDetails.metrics.averageSpeed'] = averageSpeed;
+        }
+        
+        if (finalFare) {
+          updateData['rideDetails.fare.totalFare'] = finalFare;
+          updateData['payment.amount'] = finalFare;
+        }
+        
+        const updatedRequest = await EmergencyRequest.findOneAndUpdate(
+          { requestId },
+          { $set: updateData },
+          { new: true }
+        );
+        
+        if (!updatedRequest) {
+          return socket.emit('error', { message: 'Request not found' });
+        }
+        
+        // Notify patient that ride has completed
+        if (updatedRequest.patientId) {
+          const patientSocketId = connectedSockets.get(updatedRequest.patientId);
+          if (patientSocketId) {
+            io.to(patientSocketId).emit('ride:completed', {
+              requestId,
+              rideDetails: updatedRequest.rideDetails,
+              totalFare: finalFare
+            });
+          }
+        }
+        
+        socket.emit('ride:completed', { success: true, requestId });
+      } catch (error) {
+        console.error('Error completing ride:', error);
+        socket.emit('error', { message: 'Error completing ride' });
+      }
+    });
+    
+    // Handle ride progress updates
+    socket.on('ride:progress', async (data) => {
+      try {
+        if (!socket.userId || socket.userType !== 'driver') {
+          return socket.emit('error', { message: 'Unauthorized - Only drivers can update ride progress' });
+        }
+        
+        const { requestId, currentLocation, remainingDistance, remainingTime, currentSpeed, waypoint } = data;
+        
+        const updateData = {};
+        
+        if (currentLocation) {
+          updateData['driverLocation'] = currentLocation;
+        }
+        
+        if (remainingDistance !== undefined) {
+          updateData['rideDetails.route.distance.remaining'] = remainingDistance;
+        }
+        
+        if (remainingTime !== undefined) {
+          updateData['rideDetails.route.duration.remaining'] = remainingTime;
+        }
+        
+        if (currentSpeed !== undefined) {
+          updateData['driverLocation.speed'] = currentSpeed;
+        }
+        
+        if (waypoint) {
+          updateData['$push'] = {
+            'rideDetails.route.waypoints': {
+              ...waypoint,
+              timestamp: new Date()
+            }
+          };
+        }
+        
+        const updatedRequest = await EmergencyRequest.findOneAndUpdate(
+          { requestId },
+          updateData,
+          { new: true }
+        );
+        
+        if (!updatedRequest) {
+          return socket.emit('error', { message: 'Request not found' });
+        }
+        
+        // Notify patient of progress update
+        if (updatedRequest.patientId) {
+          const patientSocketId = connectedSockets.get(updatedRequest.patientId);
+          if (patientSocketId) {
+            io.to(patientSocketId).emit('ride:progress_update', {
+              requestId,
+              currentLocation: updatedRequest.driverLocation,
+              remainingDistance: updatedRequest.rideDetails.route.distance.remaining,
+              remainingTime: updatedRequest.rideDetails.route.duration.remaining,
+              currentSpeed: updatedRequest.driverLocation.speed
+            });
+          }
+        }
+        
+        socket.emit('ride:progress_updated', { success: true, requestId });
+      } catch (error) {
+        console.error('Error updating ride progress:', error);
+        socket.emit('error', { message: 'Error updating ride progress' });
+      }
+    });
+
+    // === REAL-TIME LOCATION TRACKING EVENTS ===
+    
+    // Request location sharing permission
+    socket.on('location:request-permission', async (data) => {
+      try {
+        const { requestId } = data;
+        
+        if (!socket.userId) {
+          return socket.emit('error', { message: 'Unauthorized' });
+        }
+
+        console.log(`Location permission requested for request ${requestId} by ${socket.userType} ${socket.userId}`);
+
+        // Update request to mark permission requested
+        await EmergencyRequest.findOneAndUpdate(
+          { requestId },
+          { 'locationPermissions.requestedAt': new Date() }
+        );
+
+        // Notify the other party about permission request
+        const request = await EmergencyRequest.findOne({ requestId });
+        if (request) {
+          const targetUserId = socket.userType === 'driver' ? request.patientId : request.driverId;
+          const targetSocketId = connectedSockets.get(targetUserId);
+          
+          if (targetSocketId) {
+            io.to(targetSocketId).emit('location:permission-requested', {
+              requestId,
+              requesterType: socket.userType,
+              message: `${socket.userType === 'driver' ? 'Driver' : 'Patient'} is requesting to share location`
+            });
+          }
+        }
+
+        socket.emit('location:permission-request-sent', { requestId });
+      } catch (error) {
+        console.error('Location permission request error:', error);
+        socket.emit('error', { message: 'Failed to request location permission' });
+      }
+    });
+
+    // Grant location sharing permission
+    socket.on('location:grant-permission', async (data) => {
+      try {
+        const { requestId } = data;
+        
+        if (!socket.userId) {
+          return socket.emit('error', { message: 'Unauthorized' });
+        }
+
+        console.log(`Location permission granted for request ${requestId} by ${socket.userType} ${socket.userId}`);
+
+        // Update permission in database
+        await LocationService.grantLocationPermission(requestId, socket.userType);
+
+        // Notify all parties about permission granted
+        const request = await EmergencyRequest.findOne({ requestId });
+        if (request) {
+          const targetUserId = socket.userType === 'driver' ? request.patientId : request.driverId;
+          const targetSocketId = connectedSockets.get(targetUserId);
+          
+          if (targetSocketId) {
+            io.to(targetSocketId).emit('location:permission-granted', {
+              requestId,
+              granterType: socket.userType,
+              message: `${socket.userType === 'driver' ? 'Driver' : 'Patient'} has granted location sharing`
+            });
+          }
+
+          // Check if both parties have granted permission
+          const permissions = await LocationService.getLocationSharingStatus(requestId);
+          if (permissions.bothSharing) {
+            // Notify both parties that real-time tracking is active
+            [request.patientId, request.driverId].forEach(userId => {
+              const socketId = connectedSockets.get(userId);
+              if (socketId) {
+                io.to(socketId).emit('location:tracking-active', {
+                  requestId,
+                  message: 'Real-time location tracking is now active'
+                });
+              }
+            });
+          }
+        }
+
+        socket.emit('location:permission-granted-success', { requestId });
+      } catch (error) {
+        console.error('Location permission grant error:', error);
+        socket.emit('error', { message: 'Failed to grant location permission' });
+      }
+    });
+
+    // Deny location sharing permission
+    socket.on('location:deny-permission', async (data) => {
+      try {
+        const { requestId } = data;
+        
+        if (!socket.userId) {
+          return socket.emit('error', { message: 'Unauthorized' });
+        }
+
+        console.log(`Location permission denied for request ${requestId} by ${socket.userType} ${socket.userId}`);
+
+        // Notify the other party about permission denial
+        const request = await EmergencyRequest.findOne({ requestId });
+        if (request) {
+          const targetUserId = socket.userType === 'driver' ? request.patientId : request.driverId;
+          const targetSocketId = connectedSockets.get(targetUserId);
+          
+          if (targetSocketId) {
+            io.to(targetSocketId).emit('location:permission-denied', {
+              requestId,
+              denierType: socket.userType,
+              message: `${socket.userType === 'driver' ? 'Driver' : 'Patient'} has denied location sharing`
+            });
+          }
+        }
+
+        socket.emit('location:permission-denied-success', { requestId });
+      } catch (error) {
+        console.error('Location permission denial error:', error);
+        socket.emit('error', { message: 'Failed to deny location permission' });
+      }
+    });
+
+    // Update real-time location
+    socket.on('location:update', async (data) => {
+      try {
+        const { requestId, latitude, longitude, accuracy, heading, speed, address } = data;
+        
+        if (!socket.userId) {
+          return socket.emit('error', { message: 'Unauthorized' });
+        }
+
+        if (!LocationService.isValidLocation(latitude, longitude)) {
+          return socket.emit('error', { message: 'Invalid location coordinates' });
+        }
+
+        console.log(`Location update from ${socket.userType} ${socket.userId} for request ${requestId}`);
+
+        // Check if location sharing is permitted
+        const permissions = await LocationService.getLocationSharingStatus(requestId);
+        const canShare = socket.userType === 'patient' ? permissions.patientSharing : permissions.driverSharing;
+        
+        if (!canShare) {
+          return socket.emit('error', { message: 'Location sharing not permitted' });
+        }
+
+        // Update location in database
+        const locationData = { latitude, longitude, accuracy, heading, speed, address };
+        let updatedRequest;
+
+        if (socket.userType === 'driver') {
+          updatedRequest = await LocationService.updateDriverLocation(requestId, socket.userId, locationData);
+          
+          // Also update driver model for legacy support
+          await Driver.findOneAndUpdate(
+            { driverId: socket.userId },
+            {
+              'currentLocation.latitude': latitude,
+              'currentLocation.longitude': longitude,
+              'currentLocation.lastUpdated': new Date()
+            },
+            { upsert: true }
+          );
+        } else {
+          updatedRequest = await LocationService.updatePatientLocation(requestId, locationData);
+        }
+
+        if (updatedRequest) {
+          // Get distance and ETA if both locations are available
+          let distanceInfo = null;
+          try {
+            distanceInfo = await LocationService.getDistanceAndETA(requestId);
+          } catch (etaError) {
+            console.log('Could not calculate ETA:', etaError.message);
+          }
+
+          // Broadcast location update to the other party
+          const targetUserId = socket.userType === 'driver' ? updatedRequest.patientId : updatedRequest.driverId;
+          const targetSocketId = connectedSockets.get(targetUserId);
+          
+          if (targetSocketId) {
+            io.to(targetSocketId).emit('location:received', {
+              requestId,
+              userType: socket.userType,
+              location: { latitude, longitude, accuracy, heading, speed, address },
+              timestamp: new Date().toISOString(),
+              distanceInfo
+            });
+          }
+
+          // Send confirmation to sender
+          socket.emit('location:update-success', {
+            requestId,
+            timestamp: new Date().toISOString(),
+            distanceInfo
+          });
+        }
+
+      } catch (error) {
+        console.error('Location update error:', error);
+        socket.emit('error', { message: 'Failed to update location' });
+      }
+    });
+
+    // Get current distance and ETA
+    socket.on('location:get-distance', async (data) => {
+      try {
+        const { requestId } = data;
+        
+        if (!socket.userId) {
+          return socket.emit('error', { message: 'Unauthorized' });
+        }
+
+        const distanceInfo = await LocationService.getDistanceAndETA(requestId);
+        
+        socket.emit('location:distance-info', {
+          requestId,
+          ...distanceInfo,
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (error) {
+        console.error('Distance calculation error:', error);
+        socket.emit('error', { message: 'Failed to calculate distance' });
+      }
+    });
+
+    // Stop location sharing
+    socket.on('location:stop-sharing', async (data) => {
+      try {
+        const { requestId } = data;
+        
+        if (!socket.userId) {
+          return socket.emit('error', { message: 'Unauthorized' });
+        }
+
+        console.log(`Location sharing stopped by ${socket.userType} ${socket.userId} for request ${requestId}`);
+
+        // Revoke permission
+        await LocationService.revokeLocationPermission(requestId, socket.userType);
+
+        // Notify the other party
+        const request = await EmergencyRequest.findOne({ requestId });
+        if (request) {
+          const targetUserId = socket.userType === 'driver' ? request.patientId : request.driverId;
+          const targetSocketId = connectedSockets.get(targetUserId);
+          
+          if (targetSocketId) {
+            io.to(targetSocketId).emit('location:sharing-stopped', {
+              requestId,
+              stopperType: socket.userType,
+              message: `${socket.userType === 'driver' ? 'Driver' : 'Patient'} has stopped sharing location`
+            });
+          }
+        }
+
+        socket.emit('location:stop-sharing-success', { requestId });
+
+      } catch (error) {
+        console.error('Stop location sharing error:', error);
+        socket.emit('error', { message: 'Failed to stop location sharing' });
       }
     });
 
@@ -306,6 +862,9 @@ export function initializeSocket(server) {
   console.log('Socket.IO initialized');
   return io;
 }
+
+// Export io instance for use in other modules
+export { io };
 
 // Function to send message to specific socket ID
 export function sendMessageToSocketId(socketId, messageObject) {

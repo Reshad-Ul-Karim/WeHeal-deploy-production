@@ -128,6 +128,29 @@ const DoctorProfile = ({ onProfileUpdate }) => {
       }
     } catch (err) {
       console.error('Error fetching specializations:', err);
+      // Set default specializations if API fails
+      setSpecializations([
+        'General Medicine',
+        'Cardiology',
+        'Dermatology',
+        'Endocrinology',
+        'Gastroenterology',
+        'Neurology',
+        'Obstetrics & Gynecology',
+        'Ophthalmology',
+        'Orthopedics',
+        'Pediatrics',
+        'Psychiatry',
+        'Pulmonology',
+        'Rheumatology',
+        'Urology',
+        'ENT (Ear, Nose & Throat)',
+        'Emergency Medicine',
+        'Family Medicine',
+        'Internal Medicine',
+        'Oncology',
+        'Pathology'
+      ]);
     }
   };
 

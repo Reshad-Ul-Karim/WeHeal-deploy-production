@@ -47,13 +47,32 @@ const PatientDashboard = () => {
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const fileInputRef = useRef(null);
+  const notificationRef = useRef(null);
 
   // Toggle dark mode
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
     document.documentElement.setAttribute('data-theme', !isDarkMode ? 'dark' : 'light');
   };
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotificationDropdown(false);
+      }
+    };
+
+    if (showNotificationDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotificationDropdown]);
 
   // Initialize theme
   useEffect(() => {
@@ -120,6 +139,10 @@ const PatientDashboard = () => {
     navigate('/emergency');
   };
 
+  const handleNurseService = () => {
+    navigate('/emergency/nurse-marketplace');
+  };
+
   const showNotification = (message, type = 'info') => {
     // Create notification element
     const notification = document.createElement('div');
@@ -166,17 +189,43 @@ const PatientDashboard = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
+  const [chatImageUpload, setChatImageUpload] = useState(null);
+  const [chatImagePreview, setChatImagePreview] = useState(null);
   useEffect(() => {
     const handlerAssigned = (data) => setChatAssignedAgent(data.agent);
-    const handlerMessage = (msg) => setChatMessages(prev => [...prev, msg]);
+    const handlerMessage = (msg) => {
+    if (msg.type === 'image') {
+      setChatMessages(prev => [...prev, { 
+        from: 'agent', 
+        type: 'image',
+        imageUrl: msg.imageUrl,
+        fileName: msg.fileName,
+        at: msg.at 
+      }]);
+    } else {
+      setChatMessages(prev => [...prev, msg]);
+    }
+  };
+    const handlerChatEnded = (data) => {
+      // Chat was ended by the agent
+      setChatOpen(false);
+      setChatMessages([]);
+      setChatInput('');
+      setChatAssignedAgent(null);
+      // You could show a notification here if needed
+    };
+    
     try {
       websocketService.connect();
       websocketService.subscribe('chat:assigned', handlerAssigned);
       websocketService.subscribe('chat:message', handlerMessage);
+      websocketService.subscribe('chat:ended', handlerChatEnded);
     } catch {}
+    
     return () => {
       websocketService.unsubscribe('chat:assigned', handlerAssigned);
       websocketService.unsubscribe('chat:message', handlerMessage);
+      websocketService.unsubscribe('chat:ended', handlerChatEnded);
     };
   }, []);
 
@@ -205,6 +254,83 @@ const PatientDashboard = () => {
         });
       }
     } catch {}
+  };
+
+  const endChat = () => {
+    try {
+      if (chatAssignedAgent?.id) {
+        websocketService.send('chat:end', { 
+          patientId: user?._id || user?.id, 
+          agentId: chatAssignedAgent.id 
+        });
+      }
+    } catch {}
+    
+    // Clear chat state
+    setChatOpen(false);
+    setChatMessages([]);
+    setChatInput('');
+    setChatAssignedAgent(null);
+    setChatImageUpload(null);
+    setChatImagePreview(null);
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+      }
+      
+      setChatImageUpload(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setChatImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const sendImage = () => {
+    if (!chatImageUpload) return;
+    
+    const msg = {
+      from: 'patient',
+      type: 'image',
+      imageUrl: chatImagePreview,
+      fileName: chatImageUpload.name,
+      at: new Date().toISOString()
+    };
+    
+    setChatMessages(prev => [...prev, msg]);
+    
+    try {
+      if (chatAssignedAgent?.id) {
+        websocketService.send('chat:message', {
+          toUserId: chatAssignedAgent.id,
+          message: { ...msg, patientId: user?._id || user?.id }
+        });
+      }
+    } catch {}
+    
+    // Clear image state
+    setChatImageUpload(null);
+    setChatImagePreview(null);
+  };
+
+  const removeImage = () => {
+    setChatImageUpload(null);
+    setChatImagePreview(null);
   };
 
   const handleProfileUpdate = async (e) => {
@@ -461,26 +587,7 @@ const PatientDashboard = () => {
           <main className="dashboard-main">
             {/* Top Header */}
             <header className="main-header">
-              <div className="header-left">
-                <h1>
-                  {activeTab === 'overview' && 'Dashboard Overview'}
-                  {activeTab === 'appointments' && 'My Appointments'}
-                  {activeTab === 'health' && 'Health Records'}
 
-                  {activeTab === 'marketplace' && 'Healthcare Marketplace'}
-                  {activeTab === 'subscriptions' && 'Medicine Subscriptions'}
-                  {activeTab === 'billing' && 'Billing & Payments'}
-                </h1>
-                <p className="header-subtitle">
-                  {activeTab === 'overview' && `Welcome back, ${user.name}! Here's your health summary.`}
-                  {activeTab === 'appointments' && 'Manage your upcoming and past appointments'}
-                  {activeTab === 'health' && 'View your medical records and health history'}
-
-                  {activeTab === 'marketplace' && 'Shop for health products and services'}
-                  {activeTab === 'subscriptions' && 'Automate your medicine orders with recurring deliveries'}
-                  {activeTab === 'billing' && 'Review your payments and billing history'}
-                </p>
-              </div>
               <div className="header-right">
                 <button 
                   className="theme-toggle-btn"
@@ -489,9 +596,59 @@ const PatientDashboard = () => {
                 >
                   <i data-feather={isDarkMode ? 'sun' : 'moon'}></i>
                 </button>
-                <div className="notification-btn">
+                <div className="notification-btn" ref={notificationRef} onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}>
                   <i data-feather="bell"></i>
                   <span className="notification-badge">3</span>
+                  
+                  {/* Notification Dropdown */}
+                  {showNotificationDropdown && (
+                    <div className="notification-dropdown">
+                      <div className="notification-header">
+                        <h4>Recent Activity</h4>
+                        <button 
+                          className="close-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowNotificationDropdown(false);
+                          }}
+                        >
+                          <i data-feather="x"></i>
+                        </button>
+                      </div>
+                      <div className="notification-content">
+                        <div className="activity-item">
+                          <div className="activity-icon">
+                            <i data-feather="calendar-check"></i>
+                          </div>
+                          <div className="activity-content">
+                            <h4>Appointment Confirmed</h4>
+                            <p>Dr. Smith - Cardiology consultation</p>
+                            <span className="activity-time">2 hours ago</span>
+                          </div>
+                        </div>
+                        <div className="activity-item">
+                          <div className="activity-icon">
+                            <i data-feather="file-plus"></i>
+                          </div>
+                          <div className="activity-content">
+                            <h4>Lab Results Available</h4>
+                            <p>Blood work completed - Normal results</p>
+                            <span className="activity-time">1 day ago</span>
+                          </div>
+                        </div>
+                        <div className="activity-item">
+                          <div className="activity-icon">
+                            <i data-feather="credit-card"></i>
+                          </div>
+                          <div className="activity-content">
+                            <h4>Payment Processed</h4>
+                            <p>Consultation fee paid - $150</p>
+                            <span className="activity-time">3 days ago</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="user-profile" onClick={() => setShowProfileEdit(true)}>
                   <div className="user-avatar">
@@ -521,102 +678,52 @@ const PatientDashboard = () => {
               {activeTab === 'overview' && (
                 <div className="overview-content">
                   {/* Health Stats Cards */}
-                  <div className="stats-row">
-                    <div className="stat-card primary">
-                      <div className="stat-header">
-                        <div className="stat-icon">
-                          <i data-feather="heart"></i>
-                        </div>
-                        <div className="stat-trend up">
-                          <i data-feather="trending-up"></i>
-                          <span>+5%</span>
-                        </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {/* Appointments Card */}
+                    <div className="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 border border-blue-gray-100 shadow-sm">
+                      <div className="bg-clip-border mt-4 mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-blue-600 to-blue-800 text-white shadow-blue-900/20 absolute grid h-12 w-12 place-items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-6 h-6 text-white">
+                          <path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5M9 12.75h6m-6 3h6m-6-6h6"></path>
+                        </svg>
                       </div>
-                      <div className="stat-content">
-                        <h3>Health Score</h3>
-                        <div className="stat-value">
-                          <span className="value">85</span>
-                          <span className="unit">%</span>
-                        </div>
-                        <p className="stat-description">Overall health rating</p>
+                      <div className="p-4 text-right">
+                        <p className="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">Appointments</p>
+                        <h4 className="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">{dashboardData.patientData?.upcomingAppointments?.length || 0}</h4>
+                      </div>
+                      <div className="border-t border-blue-gray-50 p-4">
+                        <p className="block antialiased font-sans text-base leading-relaxed font-normal text-blue-gray-600"><strong className="text-green-500">+2</strong>&nbsp;new this week</p>
                       </div>
                     </div>
 
-                    <div className="stat-card success">
-                      <div className="stat-header">
-                        <div className="stat-icon">
-                          <i data-feather="calendar-check"></i>
-                        </div>
-                        <div className="stat-trend up">
-                          <i data-feather="plus"></i>
-                          <span>2</span>
-                        </div>
+                    {/* Points Card */}
+                    <div className="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 border border-blue-gray-100 shadow-sm">
+                      <div className="bg-clip-border mt-4 mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-yellow-600 to-yellow-800 text-white shadow-yellow-900/20 absolute grid h-12 w-12 place-items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-6 h-6 text-white">
+                          <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"></path>
+                        </svg>
                       </div>
-                      <div className="stat-content">
-                        <h3>Appointments</h3>
-                        <div className="stat-value">
-                          <span className="value">{dashboardData.patientData?.upcomingAppointments?.length || 0}</span>
-                          <span className="unit">upcoming</span>
-                        </div>
-                        <p className="stat-description">Scheduled visits</p>
+                      <div className="p-4 text-right">
+                        <p className="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">Points</p>
+                        <h4 className="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">{dashboardData.patientData?.loyaltyPoints || 0}</h4>
+                      </div>
+                      <div className="border-t border-blue-gray-50 p-4">
+                        <p className="block antialiased font-sans text-base leading-relaxed font-normal text-blue-gray-600"><strong className="text-yellow-500">Silver</strong>&nbsp;member status</p>
                       </div>
                     </div>
 
-                    <div className="stat-card warning">
-                      <div className="stat-header">
-                        <div className="stat-icon">
-                          <i data-feather="dollar-sign"></i>
-                        </div>
-                        <div className="stat-trend down">
-                          <i data-feather="trending-down"></i>
-                          <span>-$50</span>
-                        </div>
+                    {/* Payments Card */}
+                    <div className="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 border border-blue-gray-100 shadow-sm">
+                      <div className="bg-clip-border mt-4 mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-green-600 to-green-800 text-white shadow-green-900/20 absolute grid h-12 w-12 place-items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-6 h-6 text-white">
+                          <path d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"></path>
+                        </svg>
                       </div>
-                      <div className="stat-content">
-                        <h3>Outstanding</h3>
-                        <div className="stat-value">
-                          <span className="currency">$</span>
-                          <span className="value">{dashboardData.patientData?.outstandingBills || 0}</span>
-                        </div>
-                        <p className="stat-description">Pending payments</p>
+                      <div className="p-4 text-right">
+                        <p className="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">Recent Payments</p>
+                        <h4 className="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900" id="recent-payments-count">-</h4>
                       </div>
-                    </div>
-
-                    <div className="stat-card info">
-                      <div className="stat-header">
-                        <div className="stat-icon">
-                          <i data-feather="award"></i>
-                        </div>
-                        <div className="badge">Silver</div>
-                      </div>
-                      <div className="stat-content">
-                        <h3>Points</h3>
-                        <div className="stat-value">
-                          <span className="value">{dashboardData.patientData?.loyaltyPoints || 0}</span>
-                          <span className="unit">pts</span>
-                        </div>
-                        <p className="stat-description">Loyalty rewards</p>
-                      </div>
-                    </div>
-
-                    {/* Payment Status Card */}
-                    <div className="stat-card secondary">
-                      <div className="stat-header">
-                        <div className="stat-icon">
-                          <i data-feather="credit-card"></i>
-                        </div>
-                        <div className="stat-trend up">
-                          <i data-feather="check-circle"></i>
-                          <span>Paid</span>
-                        </div>
-                      </div>
-                      <div className="stat-content">
-                        <h3>Recent Payments</h3>
-                        <div className="stat-value">
-                          <span className="value" id="recent-payments-count">-</span>
-                          <span className="unit">this month</span>
-                        </div>
-                        <p className="stat-description">Payment activity</p>
+                      <div className="border-t border-blue-gray-50 p-4">
+                        <p className="block antialiased font-sans text-base leading-relaxed font-normal text-blue-gray-600"><strong className="text-green-500">Paid</strong>&nbsp;this month</p>
                       </div>
                     </div>
                   </div>
@@ -648,32 +755,6 @@ const PatientDashboard = () => {
                         <div className="action-content">
                           <h4>Emergency Care</h4>
                           <p>24/7 emergency medical services</p>
-                          <div className="action-arrow">
-                            <i data-feather="arrow-right"></i>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="action-card" onClick={() => setShowProfileEdit(true)}>
-                        <div className="action-icon">
-                          <i data-feather="user-edit"></i>
-                        </div>
-                        <div className="action-content">
-                          <h4>Update Profile</h4>
-                          <p>Manage your personal information</p>
-                          <div className="action-arrow">
-                            <i data-feather="arrow-right"></i>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="action-card">
-                        <div className="action-icon">
-                          <i data-feather="file-text"></i>
-                        </div>
-                        <div className="action-content">
-                          <h4>Health Records</h4>
-                          <p>View your medical history and reports</p>
                           <div className="action-arrow">
                             <i data-feather="arrow-right"></i>
                           </div>
@@ -725,43 +806,7 @@ const PatientDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="section">
-                      <div className="section-header">
-                        <h2>Recent Activity</h2>
-                      </div>
-                      <div className="activity-feed">
-                        <div className="activity-item">
-                          <div className="activity-icon">
-                            <i data-feather="calendar-check"></i>
-                          </div>
-                          <div className="activity-content">
-                            <h4>Appointment Confirmed</h4>
-                            <p>Dr. Smith - Cardiology consultation</p>
-                            <span className="activity-time">2 hours ago</span>
-                          </div>
-                        </div>
-                        <div className="activity-item">
-                          <div className="activity-icon">
-                            <i data-feather="file-plus"></i>
-                          </div>
-                          <div className="activity-content">
-                            <h4>Lab Results Available</h4>
-                            <p>Blood work completed - Normal results</p>
-                            <span className="activity-time">1 day ago</span>
-                          </div>
-                        </div>
-                        <div className="activity-item">
-                          <div className="activity-icon">
-                            <i data-feather="credit-card"></i>
-                          </div>
-                          <div className="activity-content">
-                            <h4>Payment Processed</h4>
-                            <p>Consultation fee paid - $150</p>
-                            <span className="activity-time">3 days ago</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+
                   </div>
                 </div>
               )}
@@ -769,26 +814,42 @@ const PatientDashboard = () => {
               {activeTab === 'ai-buddy' && (
                 <div className="section" style={{ textAlign: 'center' }}>
                   <h2>My AI Buddy</h2>
-                  <p style={{ color: '#6b7280' }}>Coming soon: Chat with your AI health assistant for quick help.</p>
+                  <p style={{ color: '#6B6B6B' }}>Coming soon: Chat with your AI health assistant for quick help.</p>
                 </div>
               )}
 
               {activeTab === 'customer-care' && (
                 <div className="section" style={{ maxWidth: 800 }}>
                   <h2>Customer Care</h2>
-                  <p style={{ color: '#6b7280' }}>We’re here to help. Reach out through any of the options below.</p>
+                  <p style={{ color: '#6B6B6B' }}>We're here to help. Reach out through any of the options below.</p>
                   <div className="two-column" style={{ gap: '1rem' }}>
                     <div className="card">
                       <div className="card-body">
-                        <h3>Call Us</h3>
-                        <p style={{ color: '#6b7280' }}>24/7 helpline</p>
-                        <a href="tel:+1800123456" className="btn btn-primary">+1 800 123 456</a>
+                        <h3>WhatsApp Chat</h3>
+                        <p style={{ color: '#6B6B6B' }}>24/7 support via WhatsApp</p>
+                        <a 
+                          href="https://wa.me/+8801308538775?text=Hi%20I%20need%20help%20with%20WeHeal" 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="btn btn-primary"
+                          style={{ 
+                            backgroundColor: '#25D366', 
+                            borderColor: '#25D366',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                          }}
+                        >
+                          <span style={{ fontSize: '18px' }}>💬</span>
+                          Chat on WhatsApp
+                        </a>
                       </div>
                     </div>
                     <div className="card">
                       <div className="card-body">
                         <h3>Email</h3>
-                        <p style={{ color: '#6b7280' }}>We usually respond within a few hours</p>
+                        <p style={{ color: '#6B6B6B' }}>We usually respond within a few hours</p>
                         <a href="mailto:support@weheal.com" className="btn btn-outline">support@weheal.com</a>
                       </div>
                     </div>
@@ -802,20 +863,38 @@ const PatientDashboard = () => {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                             <div>
                               <strong>Live Chat</strong>
-                              <div style={{ color: '#6b7280', fontSize: 12 }}>
+                              <div style={{ color: '#6B6B6B', fontSize: 12 }}>
                                 {chatAssignedAgent ? `Connected to ${chatAssignedAgent.name || 'Agent'}` : 'Waiting for an agent...'}
                               </div>
                             </div>
-                            <button className="btn btn-secondary" onClick={() => setChatOpen(false)}>Close</button>
+                            <button className="btn btn-secondary" onClick={endChat}>End Chat</button>
                           </div>
                           <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, height: 260, overflowY: 'auto', padding: 8, marginBottom: 8 }}>
                             {chatMessages.length === 0 ? (
-                              <div style={{ color: '#6b7280', textAlign: 'center', marginTop: 24 }}>No messages yet.</div>
+                              <div style={{ color: '#6B6B6B', textAlign: 'center', marginTop: 24 }}>No messages yet.</div>
                             ) : (
                               chatMessages.map((m, idx) => (
                                 <div key={idx} style={{ display: 'flex', justifyContent: m.from === 'patient' ? 'flex-end' : 'flex-start', marginBottom: 6 }}>
-                                  <div style={{ background: m.from === 'patient' ? '#2563eb' : '#f3f4f6', color: m.from === 'patient' ? '#fff' : '#111827', padding: '6px 10px', borderRadius: 12, maxWidth: '70%' }}>
-                                    {m.text}
+                                  <div style={{ background: m.from === 'patient' ? '#8B4513' : '#F5F5F5', color: m.from === 'patient' ? '#fff' : '#2C2C2C', padding: '6px 10px', borderRadius: 12, maxWidth: '70%' }}>
+                                    {m.type === 'image' ? (
+                                      <div>
+                                        <img 
+                                          src={m.imageUrl} 
+                                          alt={m.fileName || 'Image'} 
+                                          style={{ 
+                                            maxWidth: '100%', 
+                                            maxHeight: '200px', 
+                                            borderRadius: '8px',
+                                            marginBottom: '4px'
+                                          }} 
+                                        />
+                                        <div style={{ fontSize: '12px', opacity: 0.8 }}>
+                                          {m.fileName}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      m.text
+                                    )}
                                   </div>
                                 </div>
                               ))
@@ -824,6 +903,54 @@ const PatientDashboard = () => {
                           <div style={{ display: 'flex', gap: 8 }}>
                             <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Type your message..." className="form-input" style={{ flex: 1 }} />
                             <button className="btn btn-primary" onClick={sendChat}>Send</button>
+                            <button className="btn btn-danger" onClick={endChat}>End Chat</button>
+                          </div>
+                          
+                          {/* Image Upload Section */}
+                          <div style={{ marginTop: '12px', padding: '12px', border: '1px solid #E5E5E5', borderRadius: '8px', background: '#F9F9F9' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                style={{ display: 'none' }}
+                                id="chat-image-upload"
+                              />
+                              <label htmlFor="chat-image-upload" className="btn btn-outline" style={{ cursor: 'pointer', margin: 0 }}>
+                                📷 Add Image
+                              </label>
+                              {chatImageUpload && (
+                                <>
+                                  <button className="btn btn-primary" onClick={sendImage} style={{ fontSize: '12px', padding: '6px 12px' }}>
+                                    Send Image
+                                  </button>
+                                  <button className="btn btn-secondary" onClick={removeImage} style={{ fontSize: '12px', padding: '6px 12px' }}>
+                                    Remove
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                            
+                            {/* Image Preview */}
+                            {chatImagePreview && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <img 
+                                  src={chatImagePreview} 
+                                  alt="Preview" 
+                                  style={{ 
+                                    width: '60px', 
+                                    height: '60px', 
+                                    objectFit: 'cover', 
+                                    borderRadius: '6px',
+                                    border: '2px solid #e5e7eb'
+                                  }} 
+                                />
+                                <div style={{ fontSize: '12px', color: '#6B6B6B' }}>
+                                  <div><strong>{chatImageUpload?.name}</strong></div>
+                                  <div>{(chatImageUpload?.size / 1024 / 1024).toFixed(2)} MB</div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -858,16 +985,6 @@ const PatientDashboard = () => {
                               <div className="doctor-info">
                                 <h3>{appointment.doctor}</h3>
                                 <p className="specialization">{appointment.specialization}</p>
-                                <div className="rating">
-                                  <div className="stars">
-                                    <i data-feather="star"></i>
-                                    <i data-feather="star"></i>
-                                    <i data-feather="star"></i>
-                                    <i data-feather="star"></i>
-                                    <i data-feather="star"></i>
-                                  </div>
-                                  <span className="rating-text">4.8 (124 reviews)</span>
-                                </div>
                               </div>
                             </div>
                             <div className={`status-badge-new status-${appointment.status?.toLowerCase()}`}>
@@ -965,7 +1082,7 @@ const PatientDashboard = () => {
 
 
               {activeTab === 'marketplace' && (
-                <div className="marketplace-content" style={{ padding: '2rem', backgroundColor: '#f8fafc' }}>
+                <div className="marketplace-content" style={{ padding: '2rem', backgroundColor: '#F5F5F5' }}>
                   <div className="marketplace-dashboard" style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     {/* Enhanced Header */}
                     <div className="marketplace-header" style={{ 
@@ -2100,7 +2217,7 @@ const ProfileSectionCard = ({ title, fieldPath, fields }) => {
           <div>
             {fields.map(f => (
               <div key={f.key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                <span style={{ color: '#6b7280' }}>{f.label}</span>
+                <span style={{ color: '#6B6B6B' }}>{f.label}</span>
                 <span>{data[f.key] || '-'}</span>
               </div>
             ))}
@@ -2109,7 +2226,7 @@ const ProfileSectionCard = ({ title, fieldPath, fields }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {fields.map(f => (
               <div key={f.key}>
-                <label style={{ fontSize: '0.85rem', color: '#6b7280' }}>{f.label}</label>
+                <label style={{ fontSize: '0.85rem', color: '#6B6B6B' }}>{f.label}</label>
                 <input value={form[f.key] || ''} onChange={(e) => setForm(prev => ({ ...prev, [f.key]: e.target.value }))} style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }} />
               </div>
             ))}
@@ -2152,14 +2269,14 @@ const ListSectionCard = ({ title, listFieldPath, itemFields, addTemplate }) => {
         <button className="btn btn-sm" onClick={() => setAdding(!adding)}>{adding ? 'Cancel' : 'Add'}</button>
       </div>
       <div className="card-body">
-        {list.length === 0 && !adding && <div style={{ color: '#6b7280' }}>No {title.toLowerCase()} added yet.</div>}
+        {list.length === 0 && !adding && <div style={{ color: '#6B6B6B' }}>No {title.toLowerCase()} added yet.</div>}
         {list.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {list.map((item, idx) => (
               <div key={idx} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.5rem' }}>
                 {itemFields.map(f => (
                   <div key={f.key} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#6b7280' }}>{f.label}</span>
+                    <span style={{ color: '#6B6B6B' }}>{f.label}</span>
                     <span>{item[f.key]}</span>
                   </div>
                 ))}
@@ -2171,7 +2288,7 @@ const ListSectionCard = ({ title, listFieldPath, itemFields, addTemplate }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {itemFields.map(f => (
               <div key={f.key}>
-                <label style={{ fontSize: '0.85rem', color: '#6b7280' }}>{f.label}</label>
+                <label style={{ fontSize: '0.85rem', color: '#6B6B6B' }}>{f.label}</label>
                 <input value={form[f.key] || ''} onChange={(e) => setForm(prev => ({ ...prev, [f.key]: e.target.value }))} style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 6 }} />
               </div>
             ))}
@@ -2182,3 +2299,6 @@ const ListSectionCard = ({ title, listFieldPath, itemFields, addTemplate }) => {
     </div>
   );
 };
+
+
+

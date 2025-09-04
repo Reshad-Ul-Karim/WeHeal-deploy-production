@@ -96,6 +96,9 @@ const DoctorSearch = ({ onBack }) => {
 
   const handleBookSlot = async () => {
     try {
+      setLoading(true);
+      
+      // Directly book the appointment without payment
       const response = await api.post('/patient/book-appointment', {
         doctorId: selectedDoctor._id,
         date: selectedDate,
@@ -105,22 +108,31 @@ const DoctorSearch = ({ onBack }) => {
       });
 
       if (response.data.success) {
+        // Show success message
+        alert('Appointment booked successfully!');
+        
         // Refresh availability
-        const availabilityResponse = await api.get(`/patient/doctor-availability/${selectedDoctor._id}`, {
-          params: { date: selectedDate }
-        });
+        const availabilityResponse = await api.get(`/patient/doctor-availability/${selectedDoctor._id}?date=${selectedDate}`);
         if (availabilityResponse.data.success) {
           setAvailability(availabilityResponse.data.data);
         }
+        
+        // Close modal
         setShowBookingModal(false);
         setSelectedSlot(null);
+        setSelectedDate(null);
         setAppointmentType('in-person');
+      } else {
+        alert('Failed to book appointment: ' + response.data.message);
       }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error booking appointment');
-      console.error('Error booking appointment:', err);
+    } catch (error) {
+      console.error('Error booking appointment:', error);
+      alert('Error booking appointment. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
+
 
   const handleInputChange = (e) => {
     setSearchTerm(e.target.value);
@@ -334,13 +346,18 @@ const DoctorSearch = ({ onBack }) => {
               <button className="btn btn-secondary" onClick={handleCloseModal}>
                 Cancel
               </button>
-              <button className="btn btn-primary" onClick={handleBookSlot}>
-                Confirm Booking
+              <button 
+                className="btn btn-primary" 
+                onClick={handleBookSlot}
+                disabled={loading}
+              >
+                {loading ? 'Booking...' : 'Confirm Booking'}
               </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };

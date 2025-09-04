@@ -14,15 +14,15 @@ const Signup = () => {
     role: "Patient",
     doctorDetails: {
       specialization: "",
-      yearsOfExperience: "",
-      consultationFee: "",
+      yearsOfExperience: 0,
+      consultationFee: 0,
       education: [{ degree: "", institution: "", year: "" }],
     },
     driverDetails: {
       vehicleType: "standard",
       vehicleNumber: "",
       licenseNumber: "",
-      yearsOfExperience: "",
+      yearsOfExperience: 0,
       location: "",
     },
   });
@@ -61,17 +61,36 @@ const Signup = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await signupUser(formData);
+      // Prepare data based on role
+      const submitData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        role: formData.role
+      };
+
+      // Only include role-specific details if the role requires them
+      if (formData.role === "Doctor") {
+        submitData.doctorDetails = formData.doctorDetails;
+      } else if (formData.role === "Driver") {
+        submitData.driverDetails = formData.driverDetails;
+      }
+
+      console.log('Submitting data:', submitData);
+      const response = await signupUser(submitData);
       if (response.success) {
         setMessage("Account created successfully! Please check your email for verification.");
         setTimeout(() => {
-          navigate("/login");
+          navigate("/verify-email");
         }, 2000);
       } else {
         setMessage(response.message || "Failed to create account");
       }
     } catch (error) {
-      setMessage("Error creating account. Please try again later.");
+      console.error('Signup error:', error);
+      const errorMessage = error.message || "Error creating account. Please try again later.";
+      setMessage(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -80,8 +99,8 @@ const Signup = () => {
   return (
     <div className="auth-background">
       <div className='container mx-auto px-4 h-full'>
-        <div className='flex content-center items-center justify-end h-full w-full'>
-          <div className='w-full lg:w-4/12 px-4' style={{ marginRight: '0', marginLeft: 'auto' }}>
+        <div className='flex content-center items-center justify-center h-full'>
+          <div className='w-full lg:w-6/12 px-4'>
             <div className='relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-200 border-0'>
               <div className='rounded-t mb-0 px-6 py-6'>
                 <div className='text-center mb-3'>
@@ -113,7 +132,7 @@ const Signup = () => {
                 </div>
                 <hr className='mt-6 border-b-1 border-blueGray-300' />
               </div>
-              <div className='flex-auto px-4 lg:px-10 py-10 pt-0'>
+              <div className='flex-auto px-4 lg:px-10 py-3 pt-0'>
                 <div className='text-blueGray-400 text-center mb-3 font-bold'>
                   <small>Or sign up with credentials</small>
                 </div>

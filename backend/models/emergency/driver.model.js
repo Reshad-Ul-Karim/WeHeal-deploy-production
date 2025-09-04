@@ -41,11 +41,17 @@ const driverSchema = new mongoose.Schema({
   },
   vehicleType: {
     type: String,
-    enum: ['standard', 'advanced', 'specialized', 'helicopter'],
+    enum: ['standard', 'advanced', 'specialized', 'helicopter', 'vip'],
     default: 'standard'
   },
   vehicleNumber: {
     type: String
+  },
+  // Additional vehicle details for quick access
+  vehicleDetails: {
+    registrationNumber: String,
+    chassisNumber: String,
+    ambulanceType: String
   },
   isOnline: {
     type: Boolean,
@@ -61,6 +67,10 @@ const driverSchema = new mongoose.Schema({
     default: 0
   },
   socketId: {
+    type: String,
+    default: ''
+  },
+  profilePicture: {
     type: String,
     default: ''
   },

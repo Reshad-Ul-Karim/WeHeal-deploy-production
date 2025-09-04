@@ -94,6 +94,22 @@ appointmentSchema.statics.isSlotAvailable = async function(doctorId, date, start
   const selectedDate = new Date(date);
   selectedDate.setUTCHours(0, 0, 0, 0);  // Set to midnight UTC
 
+  // Check if the appointment is in the past
+  const now = new Date();
+  const isToday = now.toDateString() === selectedDate.toDateString();
+  
+  if (isToday) {
+    // Add 30 minutes buffer to current time
+    const bufferMinutes = 30;
+    const bufferTime = new Date(now.getTime() + bufferMinutes * 60000);
+    const bufferTimeString = bufferTime.toTimeString().slice(0, 5);
+    
+    if (startTime <= bufferTimeString) {
+      console.log('Cannot book appointments in the past or too close to current time');
+      return false;
+    }
+  }
+
   // Check if there's an existing appointment in this slot for the specific date
   const existingAppointment = await this.findOne({
     doctorId,

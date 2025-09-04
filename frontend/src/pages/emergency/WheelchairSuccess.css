@@ -1,0 +1,317 @@
+/* Wheelchair Success Page Styles - Greyscale Theme */
+.success-page {
+  min-height: 100vh;
+  background: #F5F5F5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 2rem 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Header */
+.success-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.success-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.success-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2C2C2C;
+  margin-bottom: 0.5rem;
+}
+
+.success-header p {
+  font-size: 1.125rem;
+  color: #6B6B6B;
+  margin: 0;
+}
+
+/* Order Details */
+.order-details-section {
+  margin-bottom: 3rem;
+}
+
+.order-details-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2C2C2C;
+  margin-bottom: 1.5rem;
+}
+
+.order-details-card {
+  background: #FAFAFA;
+  border: 1px solid #D3D3D3;
+  border-radius: 1rem;
+  padding: 2rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row.total {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #2C2C2C;
+  border-top: 2px solid #D3D3D3;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+}
+
+.detail-row .label {
+  color: #6B6B6B;
+  font-weight: 500;
+}
+
+.detail-row .value {
+  color: #2C2C2C;
+  font-weight: 600;
+}
+
+/* Tracking Section */
+.tracking-section {
+  margin-bottom: 3rem;
+}
+
+.tracking-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2C2C2C;
+  margin-bottom: 1.5rem;
+}
+
+.tracking-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tracking-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #FAFAFA;
+  border: 1px solid #D3D3D3;
+  border-radius: 1rem;
+  position: relative;
+}
+
+.tracking-step.completed {
+  background: #F0F9FF;
+  border-color: #0369A1;
+}
+
+.tracking-step.pending {
+  background: #F5F5F5;
+  border-color: #D3D3D3;
+}
+
+.step-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 50%;
+  border: 2px solid #D3D3D3;
+}
+
+.tracking-step.completed .step-icon {
+  border-color: #0369A1;
+  background: #0369A1;
+  color: white;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-content h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2C2C2C;
+  margin-bottom: 0.25rem;
+}
+
+.step-content p {
+  color: #6B6B6B;
+  margin-bottom: 0.5rem;
+}
+
+.step-time {
+  font-size: 0.875rem;
+  color: #8B4513;
+  font-weight: 500;
+}
+
+/* Contact Section */
+.contact-section {
+  margin-bottom: 3rem;
+}
+
+.contact-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2C2C2C;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.contact-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.contact-card {
+  background: #FAFAFA;
+  border: 1px solid #D3D3D3;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.contact-card:hover {
+  border-color: #8B4513;
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.15);
+}
+
+.contact-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.contact-content h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2C2C2C;
+  margin-bottom: 0.5rem;
+}
+
+.contact-content p {
+  color: #6B6B6B;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.contact-content span {
+  font-size: 0.875rem;
+  color: #8B4513;
+  font-weight: 500;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background: #2C2C2C;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1A1A1A;
+}
+
+.btn-secondary {
+  background: #6B6B6B;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5A5A5A;
+}
+
+/* Error Message */
+.error-message {
+  text-align: center;
+  padding: 3rem;
+  background: #FAFAFA;
+  border: 1px solid #D3D3D3;
+  border-radius: 1rem;
+}
+
+.error-message h2 {
+  color: #2C2C2C;
+  margin-bottom: 1rem;
+}
+
+.error-message p {
+  color: #6B6B6B;
+  margin-bottom: 2rem;
+}
+
+.error-message button {
+  background: #2C2C2C;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.error-message button:hover {
+  background: #1A1A1A;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .contact-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .success-header h1 {
+    font-size: 2rem;
+  }
+  
+  .tracking-step {
+    padding: 1rem;
+  }
+}

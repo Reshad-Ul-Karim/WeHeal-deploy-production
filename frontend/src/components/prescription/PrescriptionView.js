@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { api } from '../../utils/api';
 import { 
   Box, 
   Typography, 
@@ -10,7 +11,12 @@ import {
   Divider, 
   Alert,
   IconButton,
-  CircularProgress
+  CircularProgress,
+  Modal,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -20,6 +26,99 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import PersonIcon from '@mui/icons-material/Person';
 import EventIcon from '@mui/icons-material/Event';
 import MedicationIcon from '@mui/icons-material/Medication';
+
+// Template styles
+const TemplateWrapper = styled('div')(({ theme }) => ({
+  width: '100%',
+  maxWidth: 850,
+  margin: '0 auto',
+  background: '#fff',
+  borderRadius: 12,
+  boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+  border: '1px solid #e5e7eb',
+  position: 'relative',
+  overflow: 'hidden'
+}));
+
+const TemplateHeader = styled('div')(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: '1fr 80px 1fr',
+  alignItems: 'center',
+  gap: 16,
+  padding: '20px 24px',
+  borderBottom: '1px solid #e5e7eb',
+  background: 'linear-gradient(135deg, #0ea5b0 0%, #155e75 100%)',
+  color: 'white'
+}));
+
+const HeaderBlock = styled('div')(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 4
+}));
+
+const TemplateTopMeta = styled('div')(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr 1fr 2fr',
+  gap: 8,
+  padding: '10px 16px',
+  borderBottom: '1px solid #e5e7eb',
+  background: '#f8fafc',
+  color: '#0f172a',
+  fontWeight: 600
+}));
+
+const TemplateBody = styled('div')(({ theme }) => ({
+  display: 'flex',
+  minHeight: 700,
+}));
+
+const RxSidebar = styled('div')(({ theme }) => ({
+  width: 60,
+  padding: '24px 16px',
+  color: '#0ea5b0',
+  fontWeight: 800,
+  letterSpacing: '0.15em'
+}));
+
+const BodyContent = styled('div')(({ theme }) => ({
+  flex: 1,
+  padding: '24px',
+  position: 'relative'
+}));
+
+const Watermark = styled('div')(({ theme }) => ({
+  position: 'absolute',
+  top: '40%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 320,
+  height: 320,
+  borderRadius: '50%',
+  border: '6px solid rgba(14,165,176,0.08)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  pointerEvents: 'none'
+}));
+
+const WatermarkPlus = styled('div')(({ theme }) => ({
+  width: 140,
+  height: 140,
+  borderRadius: 16,
+  border: '24px solid rgba(14,165,176,0.07)'
+}));
+
+const TemplateFooter = styled('div')(({ theme }) => ({
+  borderTop: '1px solid #e5e7eb',
+  padding: '10px 16px',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, 1fr)',
+  gap: 8,
+  background: '#f8fafc',
+  color: '#475569',
+  fontSize: 12
+}));
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -46,6 +145,8 @@ const PrescriptionView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState('');
 
   useEffect(() => {
     fetchPrescription();
@@ -54,16 +155,12 @@ const PrescriptionView = () => {
   const fetchPrescription = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/prescriptions/${id}`, {
-        credentials: 'include'
-      });
+      const response = await api.get(`/prescriptions/${id}`);
 
-      if (response.ok) {
-        const data = await response.json();
-        setPrescription(data.data);
+      if (response.data.success) {
+        setPrescription(response.data.data);
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to fetch prescription');
+        setError(response.data.message || 'Failed to fetch prescription');
       }
     } catch (err) {
       console.error('Error fetching prescription:', err);
@@ -73,15 +170,35 @@ const PrescriptionView = () => {
     }
   };
 
+  const handleViewPDF = async () => {
+    try {
+      const response = await api.get(`/prescriptions/${id}/pdf`, {
+        responseType: 'blob'
+      });
+
+      if (response.data) {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        setPdfUrl(url);
+        setPdfViewerOpen(true);
+      } else {
+        setError('Failed to load PDF');
+      }
+    } catch (err) {
+      console.error('Error loading PDF:', err);
+      setError('Failed to load PDF');
+    }
+  };
+
   const handleDownloadPDF = async () => {
     try {
       setDownloading(true);
-      const response = await fetch(`/api/prescriptions/${id}/pdf`, {
-        credentials: 'include'
+      const response = await api.get(`/prescriptions/${id}/pdf`, {
+        responseType: 'blob'
       });
 
-      if (response.ok) {
-        const blob = await response.blob();
+      if (response.data) {
+        const blob = new Blob([response.data], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -98,6 +215,14 @@ const PrescriptionView = () => {
       setError('Failed to download PDF');
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleClosePdfViewer = () => {
+    setPdfViewerOpen(false);
+    if (pdfUrl) {
+      window.URL.revokeObjectURL(pdfUrl);
+      setPdfUrl('');
     }
   };
 
@@ -181,310 +306,290 @@ const PrescriptionView = () => {
             </Typography>
           </Box>
           
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<VisibilityIcon />}
-              onClick={() => window.open(`/api/prescriptions/${id}/pdf`, '_blank')}
-              sx={{
-                borderColor: 'var(--mk-primary, #3b82f6)',
-                color: 'var(--mk-primary, #3b82f6)'
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <button
+              onClick={handleViewPDF}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 24px',
+                backgroundColor: 'transparent',
+                border: '2px solid #0ea5b0',
+                borderRadius: '8px',
+                color: '#0ea5b0',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#0ea5b0';
+                e.target.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = '#0ea5b0';
               }}
             >
+              <VisibilityIcon style={{ fontSize: '18px' }} />
               View PDF
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={downloading ? <CircularProgress size={16} /> : <DownloadIcon />}
+            </button>
+            <button
               onClick={handleDownloadPDF}
               disabled={downloading}
-              sx={{
-                backgroundColor: 'var(--mk-primary, #3b82f6)',
-                '&:hover': {
-                  backgroundColor: 'var(--mk-primary-dark, #2563eb)'
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 24px',
+                backgroundColor: '#0ea5b0',
+                border: '2px solid #0ea5b0',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: downloading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                opacity: downloading ? 0.7 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!downloading) {
+                  e.target.style.backgroundColor = '#155e75';
+                  e.target.style.borderColor = '#155e75';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!downloading) {
+                  e.target.style.backgroundColor = '#0ea5b0';
+                  e.target.style.borderColor = '#0ea5b0';
                 }
               }}
             >
+              {downloading ? (
+                <CircularProgress size={16} style={{ color: 'white' }} />
+              ) : (
+                <DownloadIcon style={{ fontSize: '18px' }} />
+              )}
               {downloading ? 'Downloading...' : 'Download PDF'}
-            </Button>
+            </button>
           </Box>
         </Box>
 
-        <StyledPaper>
-          {/* Prescription Header */}
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                color: 'var(--mk-primary, #3b82f6)',
-                fontWeight: 600,
-                mb: 1
-              }}
-            >
-              Medical Prescription
-            </Typography>
-            <Chip 
-              label={prescription.prescriptionId}
-              variant="outlined"
-              sx={{ 
-                borderColor: 'var(--mk-primary, #3b82f6)',
-                color: 'var(--mk-primary, #3b82f6)'
-              }}
-            />
-          </Box>
-
-          {/* Patient & Doctor Info */}
-          <StyledSection>
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                color: 'var(--mk-primary, #2563eb)',
-                fontWeight: 600,
-                mb: 2,
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <PersonIcon sx={{ mr: 1 }} />
-              Patient Information
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Patient Name
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {prescription.patientName}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Email
-                </Typography>
-                <Typography variant="body1">
-                  {prescription.patientId.email}
-                </Typography>
-              </Grid>
-            </Grid>
-          </StyledSection>
-
-          <StyledSection>
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                color: 'var(--mk-primary, #2563eb)',
-                fontWeight: 600,
-                mb: 2,
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <LocalHospitalIcon sx={{ mr: 1 }} />
-              Doctor Information
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Doctor Name
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {prescription.doctorName}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Specialization
-                </Typography>
-                <Typography variant="body1">
-                  {prescription.doctorId.specialization}
-                </Typography>
-              </Grid>
-            </Grid>
-          </StyledSection>
-
-          <StyledSection>
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                color: 'var(--mk-primary, #2563eb)',
-                fontWeight: 600,
-                mb: 2,
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <EventIcon sx={{ mr: 1 }} />
-              Appointment Details
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Prescription Date
-                </Typography>
-                <Typography variant="body1">
-                  {new Date(prescription.date).toLocaleDateString()}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body2" color="text.secondary">
-                  Appointment Date
-                </Typography>
-                <Typography variant="body1">
-                  {new Date(prescription.appointmentId.appointmentDate).toLocaleDateString()}
-                </Typography>
-              </Grid>
-            </Grid>
-          </StyledSection>
-
-          {/* Symptoms */}
-          {prescription.symptoms && (
-            <StyledSection>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  color: 'var(--mk-primary, #2563eb)',
-                  fontWeight: 600,
-                  mb: 2
-                }}
-              >
-                Symptoms
+        <TemplateWrapper>
+          <TemplateHeader>
+            <HeaderBlock>
+              <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1 }}>
+                Dr. {prescription.doctorName}
               </Typography>
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                {prescription.symptoms}
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                {prescription.doctorId?.specialization || 'General Physician'}
               </Typography>
-            </StyledSection>
-          )}
+              <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                This is a computer generated prescription
+              </Typography>
+            </HeaderBlock>
+            <Box sx={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 900, fontSize: 24
+            }}>+</Box>
+            <HeaderBlock sx={{ textAlign: 'right' }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1 }}>
+                HOSPITAL
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>WeHeal</Typography>
+            </HeaderBlock>
+          </TemplateHeader>
 
-          {/* Medications */}
-          {prescription.medications && prescription.medications.length > 0 && (
-            <StyledSection>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  color: 'var(--mk-primary, #2563eb)',
-                  fontWeight: 600,
-                  mb: 2,
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-              >
-                <MedicationIcon sx={{ mr: 1 }} />
-                Medications
-              </Typography>
-              {prescription.medications.map((med, index) => (
-                <Box key={index} sx={{ mb: 2, p: 2, bgcolor: 'var(--mk-med-bg, #f8fafc)', borderRadius: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                    {index + 1}. {med.name}
+          <TemplateTopMeta>
+            <div>Date: {new Date(prescription.date).toLocaleDateString()}</div>
+            <div>Patient Name: {prescription.patientName}</div>
+            <div>Age: {prescription.patientId?.age || '-'}</div>
+            <div>Address: {prescription.patientId?.address || '-'}</div>
+          </TemplateTopMeta>
+
+          <TemplateBody>
+            <RxSidebar>R X</RxSidebar>
+            <BodyContent>
+              <Watermark>
+                <WatermarkPlus />
+              </Watermark>
+
+              {/* Medications list */}
+              {prescription.medications?.map((med, idx) => (
+                <Box key={idx} sx={{ mb: 2 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    {idx + 1}. {med.name}
                   </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={3}>
-                      <Typography variant="body2" color="text.secondary">
-                        Dosage
-                      </Typography>
-                      <Typography variant="body1">
-                        {med.dosage}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
-                      <Typography variant="body2" color="text.secondary">
-                        Frequency
-                      </Typography>
-                      <Typography variant="body1">
-                        {med.frequency}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
-                      <Typography variant="body2" color="text.secondary">
-                        Duration
-                      </Typography>
-                      <Typography variant="body1">
-                        {med.duration}
-                      </Typography>
-                    </Grid>
-                    {med.comments && (
-                      <Grid item xs={12} sm={3}>
-                        <Typography variant="body2" color="text.secondary">
-                          Comments
-                        </Typography>
-                        <Typography variant="body1">
-                          {med.comments}
-                        </Typography>
-                      </Grid>
-                    )}
-                  </Grid>
+                  <Typography variant="body2" color="text.secondary">
+                    Dosage: {med.dosage || '-'} — Frequency: {med.frequency || '-'} — Duration: {med.duration || '-'}
+                  </Typography>
+                  {med.comments && (
+                    <Typography variant="body2" color="text.secondary">Notes: {med.comments}</Typography>
+                  )}
                 </Box>
               ))}
-            </StyledSection>
-          )}
 
-          {/* Recommended Tests */}
-          {prescription.recommendedTests && (
-            <StyledSection>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  color: 'var(--mk-primary, #2563eb)',
-                  fontWeight: 600,
-                  mb: 2
-                }}
-              >
-                Recommended Tests
-              </Typography>
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                {prescription.recommendedTests}
-              </Typography>
-            </StyledSection>
-          )}
+              {/* Optional sections */}
+              {prescription.recommendedTests && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Recommended Tests</Typography>
+                  <Typography variant="body1" sx={{ whiteSpace: 'pre-line', color: '#0f172a' }}>{prescription.recommendedTests}</Typography>
+                </Box>
+              )}
 
-          {/* Next Appointment */}
-          {prescription.nextAppointment && (
-            <StyledSection>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  color: 'var(--mk-primary, #2563eb)',
-                  fontWeight: 600,
-                  mb: 2
-                }}
-              >
-                Next Appointment
-              </Typography>
-              <Typography variant="body1">
-                {new Date(prescription.nextAppointment).toLocaleDateString()}
-              </Typography>
-            </StyledSection>
-          )}
+              {prescription.nextAppointment && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Next Appointment</Typography>
+                  <Typography variant="body1" sx={{ color: '#0f172a' }}>{new Date(prescription.nextAppointment).toLocaleDateString()}</Typography>
+                </Box>
+              )}
 
-          {/* Extra Instructions */}
-          {prescription.extraInstructions && (
-            <StyledSection>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  color: 'var(--mk-primary, #2563eb)',
-                  fontWeight: 600,
-                  mb: 2
-                }}
-              >
-                Extra Instructions
-              </Typography>
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                {prescription.extraInstructions}
-              </Typography>
-            </StyledSection>
-          )}
+              {prescription.extraInstructions && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Instructions</Typography>
+                  <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>{prescription.extraInstructions}</Typography>
+                </Box>
+              )}
+            </BodyContent>
+          </TemplateBody>
 
-          {/* Footer */}
-          <Box sx={{ textAlign: 'center', mt: 4, pt: 3, borderTop: '1px solid var(--mk-border, #e5e7eb)' }}>
-            <Typography variant="body2" color="text.secondary">
-              This prescription is valid for the specified duration only.
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Please consult your doctor before making any changes to the medication.
-            </Typography>
-          </Box>
-        </StyledPaper>
+          <TemplateFooter>
+            <div>
+              Phone: {prescription.doctorId?.phone || 'N/A'}
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              www.weheal.com
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              {prescription.patientId?.address || 'Address'}
+            </div>
+          </TemplateFooter>
+        </TemplateWrapper>
       </Box>
+
+      {/* PDF Viewer Modal */}
+      <Dialog
+        open={pdfViewerOpen}
+        onClose={handleClosePdfViewer}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            height: '90vh',
+            maxHeight: '90vh'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          borderBottom: '1px solid #e5e7eb'
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Prescription PDF - {prescription?.prescriptionId}
+          </Typography>
+          <IconButton onClick={handleClosePdfViewer} size="small">
+            <ArrowBackIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, height: '100%' }}>
+          {pdfUrl && (
+            <iframe
+              src={pdfUrl}
+              width="100%"
+              height="100%"
+              style={{
+                border: 'none',
+                minHeight: '70vh'
+              }}
+              title="Prescription PDF"
+            />
+          )}
+        </DialogContent>
+        <DialogActions sx={{ 
+          borderTop: '1px solid #e5e7eb',
+          justifyContent: 'space-between',
+          px: 3,
+          py: 2,
+          gap: 2
+        }}>
+          <button
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 24px',
+              backgroundColor: 'transparent',
+              border: '2px solid #0ea5b0',
+              borderRadius: '8px',
+              color: '#0ea5b0',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: downloading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              opacity: downloading ? 0.7 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!downloading) {
+                e.target.style.backgroundColor = '#0ea5b0';
+                e.target.style.color = 'white';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!downloading) {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = '#0ea5b0';
+              }
+            }}
+          >
+            {downloading ? (
+              <CircularProgress size={16} style={{ color: '#0ea5b0' }} />
+            ) : (
+              <DownloadIcon style={{ fontSize: '18px' }} />
+            )}
+            {downloading ? 'Downloading...' : 'Download PDF'}
+          </button>
+          <button
+            onClick={handleClosePdfViewer}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 24px',
+              backgroundColor: '#0ea5b0',
+              border: '2px solid #0ea5b0',
+              borderRadius: '8px',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              fontFamily: 'system-ui, -apple-system, sans-serif'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#155e75';
+              e.target.style.borderColor = '#155e75';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#0ea5b0';
+              e.target.style.borderColor = '#0ea5b0';
+            }}
+          >
+            Close
+          </button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -122,21 +122,6 @@ const ReportsSection = () => {
     );
   }
 
-  if (Object.keys(groupedOrders).length === 0) {
-    return (
-      <div style={{
-        padding: '2rem',
-        textAlign: 'center',
-        color: '#6b7280',
-        background: '#f9fafb',
-        borderRadius: '0.5rem',
-        border: '1px solid #e5e7eb'
-      }}>
-        📄 No lab test reports available yet
-      </div>
-    );
-  }
-
   return (
     <div>
       {/* Tab Navigation */}
@@ -193,8 +178,20 @@ const ReportsSection = () => {
             📋 Lab Test Reports
           </h3>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {Object.entries(groupedOrders).map(([date, orders]) => (
+          {Object.keys(groupedOrders).length === 0 ? (
+            <div style={{
+              padding: '2rem',
+              textAlign: 'center',
+              color: '#6b7280',
+              background: '#f9fafb',
+              borderRadius: '0.5rem',
+              border: '1px solid #e5e7eb'
+            }}>
+              📄 No lab test reports available yet
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {Object.entries(groupedOrders).map(([date, orders]) => (
               <div key={date} style={{
                 background: 'white',
                 borderRadius: '1rem',
@@ -343,7 +340,8 @@ const ReportsSection = () => {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
