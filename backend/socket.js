@@ -11,9 +11,9 @@ let connectedSockets = new Map(); // Map to store connected sockets
 export function initializeSocket(server) {
   io = new Server(server, {
     cors: {
-      origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:5001'],
+      origin: true, // Allow all origins
       methods: ['GET', 'POST'],
-      credentials: true
+      credentials: false
     },
     path: '/socket.io',
   });
