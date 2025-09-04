@@ -1,24 +1,25 @@
 import axios from 'axios';
 import feather from 'feather-icons';
+import { API_CONFIG } from '../config/api.js';
 
-const BASE_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'weheal-frontend.onrender.com' ? 'https://weheal-backend.onrender.com/api' : 'https://weheal-backend.onrender.com/api');
-const AUTH_URL = `${BASE_URL}/auth`;
+const BASE_URL = API_CONFIG.BASE_URL;
+const AUTH_URL = API_CONFIG.AUTH_URL;
 
-// Create axios instances with credentials support
+// Create axios instances with timeout and error handling
 export const authApi = axios.create({
   baseURL: AUTH_URL,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
-  },
-  withCredentials: true // Enable credentials for all requests
+  }
 });
 
 export const api = axios.create({
   baseURL: BASE_URL,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
-  },
-  withCredentials: true // Enable credentials for all requests
+  }
 });
 
 // Add request interceptor to include token
@@ -52,13 +53,13 @@ api.interceptors.response.use(
 // Function to handle login
 export const loginUser = async (loginData) => {
   try {
-    console.log('API: Sending login request with data:', loginData);
-    console.log('API: Request URL:', '/login');
+    console.log('API: Sending login request to:', AUTH_URL + '/login');
+    console.log('API: Request data:', loginData);
     
     const response = await authApi.post('/login', loginData);
     console.log('API: Response received:', response.data);
     
-    if (response.data.success) {
+    if (response.data && response.data.success) {
       const token = response.data.token;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -72,9 +73,24 @@ export const loginUser = async (loginData) => {
     return response.data;
   } catch (error) {
     console.error('API: Login error:', error);
-    console.error('API: Error response:', error.response?.data);
-    console.error('API: Error status:', error.response?.status);
-    throw error;
+    
+    // Handle different types of errors
+    if (error.code === 'ECONNABORTED') {
+      throw new Error('Request timeout. Please check your internet connection.');
+    } else if (error.response) {
+      // Server responded with error status
+      console.error('API: Error response:', error.response.data);
+      console.error('API: Error status:', error.response.status);
+      throw new Error(error.response.data?.message || 'Login failed. Please try again.');
+    } else if (error.request) {
+      // Request was made but no response received
+      console.error('API: No response received:', error.request);
+      throw new Error('Unable to connect to server. Please check your internet connection.');
+    } else {
+      // Something else happened
+      console.error('API: Unexpected error:', error.message);
+      throw new Error('An unexpected error occurred. Please try again.');
+    }
   }
 };
 

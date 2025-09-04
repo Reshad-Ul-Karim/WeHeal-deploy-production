@@ -1,11 +1,11 @@
 import axios from 'axios';
+import { API_CONFIG } from '../config/api.js';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'weheal-frontend.onrender.com' ? 'https://weheal-backend.onrender.com/api' : 'https://weheal-backend.onrender.com/api');
+const API_BASE_URL = API_CONFIG.BASE_URL;
 
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
 });
 
 // Add auth token to requests

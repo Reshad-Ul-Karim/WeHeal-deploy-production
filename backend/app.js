@@ -29,29 +29,16 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cookieParser());
 
-// CORS configuration
-const allowedOrigins = [
-  process.env.CLIENT_URL || "http://localhost:5173",
-  "https://weheal-frontend.onrender.com",
-  "http://localhost:5173"
-];
-
+// CORS configuration - simplified for production
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
+  origin: [
+    'https://weheal-frontend.onrender.com',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  exposedHeaders: ['Set-Cookie']
+  credentials: false
 }));
 
 // Test endpoint

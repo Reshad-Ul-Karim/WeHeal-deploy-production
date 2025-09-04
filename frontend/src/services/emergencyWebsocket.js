@@ -31,7 +31,8 @@ class WebSocketService {
     this.isConnecting = true;
     try {
       // Connect to main backend Socket.IO server
-      const backendUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || (window.location.hostname === 'weheal-frontend.onrender.com' ? 'https://weheal-backend.onrender.com' : 'https://weheal-backend.onrender.com');
+      const isProduction = window.location.hostname === 'weheal-frontend.onrender.com';
+      const backendUrl = isProduction ? 'https://weheal-backend.onrender.com' : 'http://localhost:5001';
       this.socket = io(backendUrl, {
         path: '/socket.io',
         transports: ['websocket', 'polling'],

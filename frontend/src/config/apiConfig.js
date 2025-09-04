@@ -1,9 +1,10 @@
 // API Configuration for WeHeal Application
 // This file centralizes all API endpoint configurations
 
-// Get API base URL from environment variables
-const API_BASE_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'weheal-frontend.onrender.com' ? 'https://weheal-backend.onrender.com/api' : 'https://weheal-backend.onrender.com/api');
-const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
+// Get API base URL - simple and reliable
+const isProduction = window.location.hostname === 'weheal-frontend.onrender.com';
+const API_BASE_URL = isProduction ? 'https://weheal-backend.onrender.com/api' : 'http://localhost:5001/api';
+const BACKEND_BASE_URL = isProduction ? 'https://weheal-backend.onrender.com' : 'http://localhost:5001';
 
 // API Endpoints Configuration
 export const API_ENDPOINTS = {
